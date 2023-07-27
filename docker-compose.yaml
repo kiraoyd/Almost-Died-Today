@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=asteroid
+      - POSTGRES_PASSWORD=asteroid
+      - POSTGRES_DB=asteroid
+
+volumes:
+  db:
+    driver: local
