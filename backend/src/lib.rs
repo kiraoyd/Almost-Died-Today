@@ -14,6 +14,7 @@ pub mod routes;
 pub mod handlers;
 pub mod db;
 pub mod layers;
+pub mod error;
 
 use crate::routes::main_routes::app;
 
@@ -26,7 +27,7 @@ pub async fn run_backend() {
     let addr = get_host_from_env();
 
     //this will do all the things, attach to the db, insert cors, set up the router
-    let app = routes::app(new_pool().await).await;
+    let app = app(new_pool().await).await;
 
     info!("Listening...");
 

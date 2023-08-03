@@ -27,6 +27,7 @@ pub async fn app(pool:PgPool) -> Router {
 
     Router::new()
         .route("/", get(root))
+        .route("/asteroid", get(main_handlers::test_db))
         //add new routes here, reads top to bottom
 
         //------

@@ -7,6 +7,7 @@ use tracing::info; //allows us to print to the console using info!()
 
 use crate::db::Store;
 use crate::error::AppError;
+use crate::models::asteroid::Asteroid;
 
 //bring in the models files here
 //use crate::models::answer::{models that live in answer}
@@ -15,8 +16,14 @@ use crate::error::AppError;
 //use crate::template::TEMPLATES;
 
 pub async fn root() {
-    //TODO just a test
-    info!("hello");
+    //Does nothing right now
+    info!("will add later")
+}
+
+pub async fn test_db( State(mut am_database): State<Store>,) -> Result<(), sqlx::Error>  {
+    let asteroid = am_database.test_db().await?;
+
+    Ok(())
 }
 
 //Build functions here as we make new CRUD stuff in db.rs

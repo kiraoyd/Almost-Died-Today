@@ -9,6 +9,7 @@ pub enum Planet{
 }
 pub struct asteroid {
     pub id: Option<AsteroidId>,
+    pub name: String,
     pub diameter: Diameter_info,
     pub is_hazardous: bool,
     pub close_approach_date: NaiveDate,
