@@ -9,7 +9,14 @@ use tracing_subscriber::util::SubscriberInitExt;
 //we will let our Store struct handle creation of a new pool
 use crate::db::new_pool;
 
+//Don't forget to make all your files accessible to the crate root HERE
 pub mod routes;
+pub mod handlers;
+pub mod db;
+pub mod layers;
+
+use crate::routes::main_routes::app;
+
 
 pub async fn run_backend() {
     dotenv().ok();
@@ -25,7 +32,7 @@ pub async fn run_backend() {
 
     //bind the server to the socket address
     axum::Server::bind(&addr)
-        .server(app.into_make_service())
+        .serve(app.into_make_service())
         .await
         .unwrap();
 }
@@ -54,4 +61,55 @@ fn init_logging(){
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
+
+/// Basic macro to create a newtype for a database ID.
+#[macro_export]
+macro_rules! make_db_id {
+    ($name:ident) => {
+        paste::paste! {
+            #[derive(
+                Clone,
+                Copy,
+                Debug,
+                sqlx::Type,
+                Display,
+                derive_more::Deref,
+                PartialEq,
+                Eq,
+                Hash,
+                Serialize,
+                Deserialize,
+            )]
+            pub struct $name(pub i32);
+
+            impl From<i32> for $name {
+                fn from(value: i32) -> Self {
+                    $name(value)
+                }
+            }
+
+            impl From<$name> for i32 {
+                fn from(value: $name) -> Self {
+                    value.0
+                }
+            }
+
+            pub trait [<Into $name>] {
+                fn into_id(self) -> $name;
+            }
+
+            impl [<Into $name>] for i32 {
+                fn into_id(self) -> $name {
+                    $name::from(self)
+                }
+            }
+
+            impl [<Into $name>] for $name {
+                fn into_id(self) -> $name {
+                    self
+                }
+            }
+        }
+    };
 }

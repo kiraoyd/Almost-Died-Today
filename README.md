@@ -19,6 +19,9 @@ From the linux command line, at the root directory of the project:
 
 ```cd backend```
 
+```cp .env.example .env```  to create a .env file locally (will update this once we move to Docker)
+
+
 ```cargo run``` to start the server listening.
 
 ```cd ..```
