@@ -23,8 +23,8 @@ miss_distance_miles,
 orbiting_body,
 )]
 pub struct Asteroid {
-    pub id: Option<i32>, //TODO change back to AsteroidId
-    pub name: Option<i32>,
+    pub id: AsteroidId,
+    pub name: i32,
     pub diameter: Option<DiameterInfo>,
     pub is_hazardous: Option<bool>,
     pub close_approach_date: Option<NaiveDate>,
