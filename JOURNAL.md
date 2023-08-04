@@ -61,6 +61,30 @@ For the date and datetime I'll use chrono's NaiveDate and NaiveDateTime types (t
 
 I want the id to be of type ASteroidId, so I'm using the macro Casey showed us in class to handle templating out the struct for an ID type and it's impls.
 
+
+### 8/4/23
+
+Ok I'm writing a new route to query for all asteroids that are flagged as hazardous, for a specific date. This is assuming that I've pulled in NASA's data from their API already, and it's living in my DB.
+This brings up a good question, how much of NASA's data do I want in my own DB at any given time?
+
+So the logic here will be: query for the asteroids of that date and specification, then iterate over the rows and pick out the one with the smallest (closest) near miss date.
+So I'll iterate over them, tracking the smallest seen until I find it. Then I will store that in an Asteroid struct and return it.
+
+I was hoping iter had some kind of "find the max" function, and this reddit post might have the answer: https://www.reddit.com/r/rust/comments/31syce/using_iterators_to_find_the_index_of_the_min_or/
+Looks liek there is an enumerate().min_by() function available. 
+I found it in the docs and will try min_by_key(), sending it the miss_distance_miles value for each row in rows.
+https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html#method.max_by_key
+But iterating over the rows from the query seems complicated due to the type, so I'm going to try to map to Rust structs, then iterate over THOSE.
+
+Oh, to pass in the &str type to the SQL I need it to be in NaiveDate form, look what I found! https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDate.html#method.parse_from_str
+That fixed it, just needed to parseit from &str to NaiveDate.
+
+But now....I can't use min_by_key to find the max value in my vec of structs, because Ord isn't implemented for an f64. BWAAAAA.
+Ok so I am going to try another approach: sort the Vec from smallest to largest miss_distance_miles values: https://www.reddit.com/r/rust/comments/yl3tov/total_cmp_on_f32_and_f64_and_ord/
+Using total_cmp as seen in the docs example here:https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp
+The only issue is, how do I handle if there are any null values here? Ok I'll only collect up asteroids that have values in that feild, how bout that.
+Grrrrg it_empty() is not impld for f64. Nothing seems to be available for f64 whyyyy. Lets go to the docs again.
+
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 
 1.First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"

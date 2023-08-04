@@ -5,6 +5,7 @@ use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use tracing::info;
+use chrono::NaiveDate;
 
 //add use crate statements for the structs we will write eventually
 use crate::models::asteroid::{Asteroid, AsteroidId};
@@ -70,24 +71,58 @@ impl Store {
 
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
-    pub async fn get_closest_by_date(&mut self, today:T,) -> Result<Asteroid, AppError> {
-        let date = today;
-        let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, today)
+    pub async fn get_closest_by_date(&mut self, today:&str,) -> Result<Asteroid, AppError> {
+        let parse_from_str = NaiveDate::parse_from_str;
+
+        let date = parse_from_str(today, "%Y-%m-%d").unwrap();
+        let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, date)
             .fetch_all(&self.conn_pool)
             .await?;
 
-        //iterate through rows and pick out the asteroid with the closest near miss distance
-        Ok()
+        let mut asteroids: Vec<_> = rows
+            .into_iter()
+            .map(|row| {
+                //We only want to collect asteroids that have values for their miss distance feild
+                if row.miss_distance_miles.unwrap().is_none() {
+                    let size_info = DiameterInfo {
+                        diameter_meters_min: row.diameter_meters_min,
+                        diameter_meters_max: row.diameter_meters_max,
+                        diameter_kmeters_min: row.diameter_kmeters_min,
+                        diameter_kmeters_max: row.diameter_kmeters_max,
+                        diameter_miles_max: row.diameter_miles_max,
+                        diameter_miles_min: row.diameter_miles_min,
+                        diameter_feet_min: row.diameter_feet_min,
+                        diameter_feet_max: row.diameter_feet_max,
+                    };
+                    Asteroid {
+                        id: row.id.into(),
+                        name: row.name,
+                        diameter: Some(size_info),
+                        is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
+                        close_approach_date: row.close_approach_date.map(|x| x),
+                        close_approach_datetime: row.close_approach_datetime.map(|x| x),
+                        relative_velocity_mph: row.relative_velocity_mph.map(|x| x),
+                        miss_distance_miles: row.miss_distance_miles.map(|x| x),
+                        orbiting_body: row.orbiting_body.map(|x| x),
+                    }
+                }
+            })
+            .collect();
+
+        //total_cmp sorts the Vec from decreasing to increasing order
+        asteroids.sort_by(|a,b| a.miss_distance_miles.unwrap().total_cmp(&b.miss_distance_miles.unwrap()));
+        let closest_call = asteroids[0].clone();
+        Ok(closest_call.clone())
 
     }
 
-    ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
-    /// Parses the results to find the biggest asteroid
-    pub async fn get_biggest_by_date(&mut self) -> Result<Asteroid, AppError> {
-        let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, today)
-            .fetch_all(&self.conn_pool)
-            .await?;
-
-        //iterate through rows and pick out the asteroid with the biggest max diameter
-    }
+    // Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
+    // Parses the results to find the biggest asteroid
+    // pub async fn get_biggest_by_date(&mut self) -> Result<Asteroid, AppError> {
+    //     let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, today)
+    //         .fetch_all(&self.conn_pool)
+    //         .await?;
+    //
+    //     //iterate through rows and pick out the asteroid with the biggest max diameter
+    // }
 }
