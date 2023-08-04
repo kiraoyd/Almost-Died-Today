@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS asteroids
     diameter_kmeters_min        float,
     diameter_kmeters_max        float,
     diameter_miles_max          float,
-    diamter_miles_min           float,
+    diameter_miles_min           float,
     diameter_feet_min           float,
     diameter_feet_max           float,
     is_hazardous                bool,

@@ -1,6 +1,6 @@
 use axum::response::Response;
-use axum::Router;
 use axum::routing::*;
+use axum::Router;
 use http::StatusCode;
 use hyper::Body;
 use sqlx::PgPool;
@@ -17,21 +17,19 @@ use crate::handlers::main_handlers::root;
 //use crate::routes::comment_routes::comment_routes;
 
 //takes in a pool, sets up the db seeds, layers on middlewares, and returns a new router
-pub async fn app(pool:PgPool) -> Router {
+pub async fn app(pool: PgPool) -> Router {
     let db = Store::with_pool(pool);
 
     info!("Seeded database");
 
     //Middlewares
-    let(cors_layer, trace_layer) = layers::get_layers();
+    let (cors_layer, trace_layer) = layers::get_layers();
 
     Router::new()
         .route("/", get(root))
-        .route("/asteroid", get(main_handlers::test_db))
+        .route("/asteroids", get(main_handlers::get_asteroids))
         //add new routes here, reads top to bottom
-
         //------
-
         //this 404 route always caps off the routes
         .route("/*_", get(handle_404)) //if no other route is found, we have a page note found 404 error
         //.merge(route_file()) //uncomment this once we have more route files to merge
@@ -40,7 +38,7 @@ pub async fn app(pool:PgPool) -> Router {
         .with_state(db.clone())
 }
 
-async fn handle_404() -> Response<Body>{
+async fn handle_404() -> Response<Body> {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
         .body(Body::from("The requested page could not be found"))
@@ -71,8 +69,8 @@ async fn handle_404() -> Response<Body>{
 
 */
 pub fn merged_route<T>(path: &str, method_router: MethodRouter<T>) -> Router<T>
-    where
-        T: Clone + Send + Sync + 'static,
+where
+    T: Clone + Send + Sync + 'static,
 {
     Router::new().route(path, method_router)
 }

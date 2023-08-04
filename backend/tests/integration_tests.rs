@@ -4,21 +4,25 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 
 use backend::routes::main_routes::app;
+use backend::models::asteroid::Asteroid;
 
-async fn test_db(db_pool:PgPool) {
+#[sqlx::test(fixtures("0001_seed_as"))]
+async fn test_get_asteroids(db_pool: PgPool) {
     let app = app(db_pool).await;
 
     let response = app
         .oneshot(
             Request::builder()
                 .method(http::Method::GET)
-                .uri("/asteroid")
-                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                .body(Body::from(serde_json::to_string(&asteroid).unwrap()))
+                .uri("/asteroids")
+                .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    asswer_eq!(response.status(), StatudCode::OK);
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let asteroids: Vec<Asteroid> = serde_json::from_slice(&body).unwrap();
+    assert!(!asteroids.is_empty());
 }

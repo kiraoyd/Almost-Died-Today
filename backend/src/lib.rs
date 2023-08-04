@@ -1,23 +1,29 @@
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
+
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
-
+use derive_more::Display;
 use dotenvy::dotenv;
+use serde_derive::{Deserialize, Serialize};
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 //we will let our Store struct handle creation of a new pool
 use crate::db::new_pool;
+use crate::error::AppError;
 
 //Don't forget to make all your files accessible to the crate root HERE
-pub mod routes;
-pub mod handlers;
 pub mod db;
-pub mod layers;
 pub mod error;
+pub mod handlers;
+pub mod layers;
+pub mod routes;
+pub mod models;
 
 use crate::routes::main_routes::app;
-
 
 pub async fn run_backend() {
     dotenv().ok();
@@ -27,7 +33,7 @@ pub async fn run_backend() {
     let addr = get_host_from_env();
 
     //this will do all the things, attach to the db, insert cors, set up the router
-    let app = app(new_pool().await).await;
+    let app = routes::main_routes::app(new_pool().await).await;
 
     info!("Listening...");
 
@@ -37,7 +43,6 @@ pub async fn run_backend() {
         .await
         .unwrap();
 }
-
 
 fn get_host_from_env() -> SocketAddr {
     let host = std::env::var("API_HOST").unwrap();
@@ -50,7 +55,7 @@ fn get_host_from_env() -> SocketAddr {
     //return the socketAddr
     SocketAddr::from((api_host, api_port))
 }
-fn init_logging(){
+fn init_logging() {
     // https://github.com/tokio-rs/axum/blob/main/examples/tracing-aka-logging
     tracing_subscriber::registry()
         .with(
