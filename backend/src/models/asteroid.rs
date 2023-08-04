@@ -23,8 +23,8 @@ miss_distance_miles,
 orbiting_body,
 )]
 pub struct Asteroid {
-    pub id: AsteroidId,
-    pub name: i32,
+    pub id: Option<AsteroidId>, // TODO: Making this PKID an Option and trying to map it in db.rs creates a buggy compiler error
+    pub name: Option<i32>, //TODO: This is also a not null value, will likly trigger the same thing if left and mapped
     pub diameter: Option<DiameterInfo>,
     pub is_hazardous: Option<bool>,
     pub close_approach_date: Option<NaiveDate>,

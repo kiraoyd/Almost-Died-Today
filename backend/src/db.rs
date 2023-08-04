@@ -52,8 +52,8 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: row.id.into(),
-                    name: row.name,
+                    id: row.id.map(AsteroidId), //TODO: Trying to map this Option throws the error
+                    name: Some(row.name), //TODO: I assume trying to map this one would also do it
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
                     close_approach_date: row.close_approach_date.map(|x| x),
@@ -66,28 +66,5 @@ impl Store {
             .collect();
 
         Ok(asteroids)
-    }
-
-    ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
-    /// Parses the results to find the asteroid with the closest near miss
-    pub async fn get_closest_by_date(&mut self, today:T,) -> Result<Asteroid, AppError> {
-        let date = today;
-        let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, today)
-            .fetch_all(&self.conn_pool)
-            .await?;
-
-        //iterate through rows and pick out the asteroid with the closest near miss distance
-        Ok()
-
-    }
-
-    ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
-    /// Parses the results to find the biggest asteroid
-    pub async fn get_biggest_by_date(&mut self) -> Result<Asteroid, AppError> {
-        let rows = sqlx::query!(r#" SELECT * FROM asteroids WHERE close_approach_date = $1 AND is_hazardous = true "#, today)
-            .fetch_all(&self.conn_pool)
-            .await?;
-
-        //iterate through rows and pick out the asteroid with the biggest max diameter
     }
 }
