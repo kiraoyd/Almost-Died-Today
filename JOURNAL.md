@@ -60,6 +60,28 @@ All numerical data is represented by floats, so I'll type them as f64's
 For the date and datetime I'll use chrono's NaiveDate and NaiveDateTime types (thanks chatGPT)
 
 I want the id to be of type ASteroidId, so I'm using the macro Casey showed us in class to handle templating out the struct for an ID type and it's impls.
+Ok now to add some migrations. 
+First thing I had to stop and think about is: in my rust struct for an asteroid, I'm packaging up all the diamter info into a seperate struct, do I need to reflect this in the DB table columns in some way?
+The conclusion I have drawn is, no. I don't. I'll just have a column for each and when I create a new rust struct in a route, handle popualting the struct feild from the table there.
+Great, I have a table add and a seed for that table (with only one row but oh well good enough for now) up and running! Verified in teh DB tool in intellij.
+Now I am going to try to build my backend again, and test the basics I built there.
+Ok forgot to pub mod the error and to change the import for app.
+Yes! we are listening!
+Now on to writing the integration test to hit the test_db route. But I'll have to stop and do that next as my next class is starting.
+
+Woah, lots of errors. I ended up throwing out the enums as they don't support the derives I want for my asteroid struct.
+The orbiting body can just be represented by a String, that's fine.
+Ok I think I got it all fixed, just a bunch of little annoying things to do with typing. 
+I wanted to move on to using templates for a front end, but I think maybe I've lost my notes or remembered incorrectly what we went over.
+I guess I'll just write another route to get an asteroid of a certain date back from the database.
+Ok having issues using map on my iterator.....asking on zulip.
+
+Casey pointed out I was missing templates.rs for the Tera templating, I'll go add that now!
+
+Also thanks to casey, I learned that anythign set to NOTNULL in my db including the PKID, will not need to be an option type in its corresponding struct feild.
+To that point, I only need to use the .map() function on feilds that are an Option type.
+.map(|x| x) sets the closure inside the map function, to say: if there is a value here, keep it, otherwise return None
+
 
 
 ### 8/4/23
@@ -114,5 +136,17 @@ We will add in more impl's for the queries we want, after geting the database sc
 19. head back to models, and create a new .rs file for each of the structs we will want to have to represent each table in the DB.
 20. Make a NASAAPI file to hold the JSOn format of a resposne coming back from the API, just for reference
 21. Add the macro template to lib.rs for making a new ID type (we'll need one for each struct-table type at some point)
+22. Inside the backend/tests folder, make a fixtures directory (so we can write some seed migrations)
+23. In backend, lets get some database tables created! ```sqlx migrate add -r add_asteroid_table```
+24. Now write the SQL to create the table
+25. Now lets write a basic seeder for it: ```sqlx migrate add  --sequential --source ./tests/fixtures seed_asteroids```
+26. Note: if that command fails, reinstall sqlx-cli: ```cargo install sqlx-cli --git https://github.com/launchbadge/sqlx.git --force```
+27. Run the migrations ``` sqlx database reset -y && sqlx migrate run --source ./tests/fixtures --ignore-missing```
+28. Note: To view the db tool in intellij for the first time: hit plus button, select postgres, change user, password, and database name to match the URL in the .env
+29. Check to see that we can run the backend
+30. Build out a test route that just grabs all rows from the db, just to test the DB in an integration test
+30. Now build an integration test (in lieu of writing client code)
+31.
+
 
 

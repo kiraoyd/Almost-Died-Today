@@ -53,8 +53,8 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: row.id.into(),
-                    name: row.name,
+                    id: row.id.map(AsteroidId), //TODO: Trying to map this Option throws the error
+                    name: Some(row.name), //TODO: I assume trying to map this one would also do it
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
                     close_approach_date: row.close_approach_date.map(|x| x),
@@ -68,6 +68,7 @@ impl Store {
 
         Ok(asteroids)
     }
+<<<<<<< HEAD
 
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
@@ -126,3 +127,6 @@ impl Store {
     //     //iterate through rows and pick out the asteroid with the biggest max diameter
     // }
 }
+=======
+}
+>>>>>>> a93be2ff2c94a03c5fca15801f7c87452d5f99ae
