@@ -29,6 +29,14 @@ pub async fn get_asteroids(
     Ok(Json(asteroids))
 }
 
+pub async fn post_current_nasa(
+    State(mut am_database): State<Store>,
+) -> Result<Json<Vec<Asteroid>>, AppError> {
+    let posted = am_database.add_current_from_nasa_api().await?;
+
+    Ok(Json(posted))
+}
+
 pub async fn get_closest(
     State(mut am_database): State<Store>,
     Path(query): Path<String>,

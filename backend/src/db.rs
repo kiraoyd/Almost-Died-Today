@@ -1,5 +1,5 @@
 use axum::Json;
-use chrono::NaiveDate;
+use chrono::{Duration, NaiveDate, Local};
 use futures::TryStreamExt;
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
@@ -11,6 +11,8 @@ use tracing::info;
 use crate::error::AppError;
 use crate::models::asteroid::DiameterInfo;
 use crate::models::asteroid::{Asteroid, AsteroidId};
+
+use crate::pull_nasa_api_data; //imports from lib.rs
 
 #[derive(Clone)]
 pub struct Store {
@@ -34,9 +36,6 @@ impl Store {
         Self { conn_pool: pool }
     }
 
-
-
-    ///Posts Vec of Asteroids to our database
 
     pub async fn get_all_asteroids(&mut self) -> Result<Vec<Asteroid>, AppError> {
         let rows = sqlx::query!(r#" SELECT * FROM asteroids"#)
@@ -71,6 +70,17 @@ impl Store {
             .collect();
 
         Ok(asteroids)
+    }
+
+
+    ///Posts Vec of Asteroids to our database
+    pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
+
+        // let today = chrono::offset::Utc::now();
+        // let naive_today = today.date().naive_utc();  //chatGPT
+        let today: NaiveDate = Local::today().naive_utc();
+        let nasa_data = pull_nasa_api_data(today).await?;
+        Ok(nasa_data)
     }
 
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous

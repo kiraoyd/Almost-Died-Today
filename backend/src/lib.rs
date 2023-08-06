@@ -32,6 +32,7 @@ pub mod models;
 pub mod routes;
 
 
+
 use crate::routes::main_routes::app;
 
 pub async fn run_backend() {
@@ -86,7 +87,7 @@ pub struct ApiResponse {
 
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
 /// The API only allows for up to 7 days worth of data to be pulled
-pub async fn pull_NASA_API_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppError> {
+pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppError> {
     dotenv().ok();
     //get the API key from .env
     let api_key = std::env::var("NASA_API_KEY").unwrap();
@@ -99,20 +100,24 @@ pub async fn pull_NASA_API_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppErr
     println!("Getting from NASA...");
     let request = format!("https://api.nasa.gov/neo/rest/v1/feed?start_date={}&end_date={}&api_key={}", start_date, date, api_key);
     let response = client.get(request).send().await?;
-    let all_asteroids = response.text().await?;
+    let all_asteroids = response.text().await?; //turn the JSON into a string
 
-    println!("Response: {}", all_asteroids);
 
     //This serde magic will take the all_asteroids json and turn it into an ApiResponse struct
     //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
     //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
-    let data: ApiResponse = serde_json::from_str(&all_asteroids).unwrap();
+    //TODO serde is having a hard time deserializing, because my Asteroid struct expects Option<i32>s?
+    let parsed_asteroids: ApiResponse = serde_json::from_str(&all_asteroids).unwrap(); //deserialize JSON into an ApiResponse struct
+    let data = parsed_asteroids.near_earth_objects.clone(); //grab just the HashMap<String, Vec<Asteroid>> from ApiResponse
+
+    //println!("Response: {}", all_asteroids);
 
     //collect all the Vec<Asteroids> in data, into one big Vec
     let mut every_asteroid: Vec<Asteroid> = Vec::new();
 
-    for (key,value) in data.near_earth_objects.iter() {
-        every_asteroid.extend(value.clone())
+    //data is a hashmap where each string key is a date, and each associated value is a Vec<Asteroid>
+    for (date,asteroid) in data.iter() {
+        every_asteroid.extend(asteroid.clone())
     }
 
     Ok(every_asteroid)
