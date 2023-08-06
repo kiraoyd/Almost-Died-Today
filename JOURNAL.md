@@ -136,6 +136,14 @@ I just have to think about WHERE I want to call this function.
 
 I also need to now deserialize the API JSON response, into my own Asteroid structs.
 I'll be using serde for this, but I'm having trouble figuring out how to iterate over the JSON string....
+Bart helped out on Zulip and pointed me in the direction of a HashMap.
+I think I got it set up, but the issue now is getting serde to deserialize from the JSON response into my Rust Struct Types.
+I'm hitting a wall so I'll have to return to this later.
+
+Still to do: Post the nasa data to the database
+Add authorization
+Add a frontend to display data
+
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 
 1.First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"

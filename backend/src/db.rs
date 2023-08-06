@@ -72,7 +72,6 @@ impl Store {
         Ok(asteroids)
     }
 
-
     ///Posts Vec of Asteroids to our database
     pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
 
@@ -80,6 +79,8 @@ impl Store {
         // let naive_today = today.date().naive_utc();  //chatGPT
         let today: NaiveDate = Local::today().naive_utc();
         let nasa_data = pull_nasa_api_data(today).await?;
+
+        //TODO once we get the nasa_data to be in the right form, we can post the data to the database
         Ok(nasa_data)
     }
 
