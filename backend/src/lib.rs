@@ -2,30 +2,40 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
+use reqwest::Client;
+use chrono::{Duration, NaiveDate};
+
 use derive_more::Display;
 use dotenvy::dotenv;
 use serde_derive::{Deserialize, Serialize};
+use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use models::asteroid::{Asteroid};
+use serde_json::{json, Value};
+
+use std::collections::HashMap;
 
 //we will let our Store struct handle creation of a new pool
 use crate::db::new_pool;
 use crate::error::AppError;
+
 
 //Don't forget to make all your files accessible to the crate root HERE
 pub mod db;
 pub mod error;
 pub mod handlers;
 pub mod layers;
-pub mod routes;
 pub mod models;
+pub mod routes;
+
 
 use crate::routes::main_routes::app;
 
 pub async fn run_backend() {
+
     dotenv().ok();
     init_logging();
 
@@ -67,6 +77,45 @@ fn init_logging() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ApiResponse {
+    near_earth_objects: HashMap<String, Vec<Asteroid>>,
+}
+
+///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
+/// The API only allows for up to 7 days worth of data to be pulled
+pub async fn pull_NASA_API_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppError> {
+    dotenv().ok();
+    //get the API key from .env
+    let api_key = std::env::var("NASA_API_KEY").unwrap();
+    //pull up to a years worth of data before the requested date
+    let start_date = date - Duration::days(7);
+
+    println!("{},{}", start_date, date);
+    let client = Client::new();
+
+    println!("Getting from NASA...");
+    let request = format!("https://api.nasa.gov/neo/rest/v1/feed?start_date={}&end_date={}&api_key={}", start_date, date, api_key);
+    let response = client.get(request).send().await?;
+    let all_asteroids = response.text().await?;
+
+    println!("Response: {}", all_asteroids);
+
+    //This serde magic will take the all_asteroids json and turn it into an ApiResponse struct
+    //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
+    //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
+    let data: ApiResponse = serde_json::from_str(&all_asteroids).unwrap();
+
+    //collect all the Vec<Asteroids> in data, into one big Vec
+    let mut every_asteroid: Vec<Asteroid> = Vec::new();
+
+    for (key,value) in data.near_earth_objects.iter() {
+        every_asteroid.extend(value.clone())
+    }
+
+    Ok(every_asteroid)
 }
 
 /// Basic macro to create a newtype for a database ID.

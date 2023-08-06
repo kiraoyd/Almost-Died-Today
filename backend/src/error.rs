@@ -13,9 +13,11 @@ pub enum AppError {
     UserAlreadyExists,
     InvalidToken,
     InternalServerError,
+    Request(reqwest::Error),
     #[allow(dead_code)]
     Any(anyhow::Error),
     MissingContent,
+
 }
 
 #[derive(derive_more::Display, Debug)]
@@ -30,6 +32,10 @@ impl IntoResponse for AppError {
                 QuestionError::InvalidId => (StatusCode::NOT_FOUND, err.to_string()),
             },
             AppError::Database(err) => (StatusCode::SERVICE_UNAVAILABLE, err.to_string()),
+            AppError::Request(err) => {
+                let message = format!("We could not complete the request {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, message)
+                }
             AppError::Any(err) => {
                 let message = format!("Internal server error! {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, message)
@@ -63,7 +69,13 @@ impl IntoResponse for AppError {
 }
 
 impl From<sqlx::Error> for AppError {
-    fn from(value: Error) -> Self {
+    fn from(value: sqlx::Error) -> Self {
         AppError::Database(value)
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(value: reqwest::Error) -> Self {
+        AppError::Request(value)
     }
 }

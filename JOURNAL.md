@@ -107,6 +107,35 @@ Using total_cmp as seen in the docs example here:https://doc.rust-lang.org/std/p
 The only issue is, how do I handle if there are any null values here? Ok I'll only collect up asteroids that have values in that feild, how bout that.
 Grrrrg it_empty() is not impld for f64. Nothing seems to be available for f64 whyyyy. Lets go to the docs again.
 
+Ok I changed direction, I'll just iterate over the sorted asteroids, and use a match statement to pull the first one that has Some() value, then stop.
+Now I'm setting up the handler and route for this endpoint, and here is my first lifetime issue! 
+I need an &str to pass through the functions, and I think this is problematic somehow.
+I tried to clone the query param for the date, rather than try to keep passing the reference, but clone wasn't working.
+I ended up finding to_owned, and learning that a clone converts an &T to a T, wheras to_owned can convert &T to another target type, and allow the ownership to be passed.
+https://www.reddit.com/r/rust/comments/l5uih4/what_is_the_difference_between_clone_and_to_owned/
+Ok but this appears to convert the &str to a....String type, so I think I need to change what get_closest_by_date expects as an arg.
+Ah and I need to adjust how I pass the date into the parse_from_str function, as it needs a str not a String.
+Ok that just pushed the lifetime error up one level, to the router itself. 
+So maybe passing an &str at all is just a bad idea here. Lets try get_closest accepting the query as a String from the get go, then we only turn it into a str when we need to in the final query code (when we convert it to a NaiveDate).
+Yes that worked! So far no errors. Tho I'm not sure if having the query param be of type String will cause more problems when I try to hit the endpoint.
+Ok I tested from postman, it works! One issue, what if we don't find a matching asteroid? I need to handle the return differently.
+
+
+### 8/6/2023
+
+Time to try and connect to the NASA API NeoW's. I generated an API key, and stored it in my untracked .env file. 
+I'll accesss it via dotenv in the lib.rs function I'm writing to bring in NASA data and convert it to a Vec<Asteroid>.
+I'm going to write a function that can take any NaiveDate as the requested date to pull info from, then will grab a years worth of data from NeoWs leading up to that date.
+That way if there was no close call on the exact requested date, we can report the most recent asteroid around that date.
+It would be cool to be able to grab pre and post asteroids for dates requested in the past, but I'll save that for an extra feature later.
+I want to be able to construct the request url with specific values, so I'm using rusts format! macro to insert values.
+
+Ah interesting, the feed only allows for up to 7 days of data, thats fine.
+Ha we got some data back! I had to mess around with the error typing to make one for Reqwest specifically, but I think this is gonna work!
+I just have to think about WHERE I want to call this function.
+
+I also need to now deserialize the API JSON response, into my own Asteroid structs.
+I'll be using serde for this, but I'm having trouble figuring out how to iterate over the JSON string....
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 
 1.First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"
@@ -146,7 +175,9 @@ We will add in more impl's for the queries we want, after geting the database sc
 29. Check to see that we can run the backend
 30. Build out a test route that just grabs all rows from the db, just to test the DB in an integration test
 30. Now build an integration test (in lieu of writing client code)
-31.
-
+31. Build out new routes: GET Asteroid that came closest on a specified date
+32. Build out new method in lib.rs: Grab all data from the NASA API, convert to Vec<Asteroid> and return it, in preparation for POSTing to our db
+33. Go to api.nasa.gov, generate an API Key. Account info and API key is in the .env
+34. To query the NeoW's API:  GET https://api.nasa.gov/neo/rest/v1/feed?start_date=START_DATE&end_date=END_DATE&api_key=API_KEY
 
 

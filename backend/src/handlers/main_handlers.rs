@@ -1,10 +1,9 @@
-
 use axum::extract::{Path, Query, State};
 use axum::response::Html;
 use axum::Json;
+use serde_json::{json, Value};
 use tera::Context;
 use tracing::error;
-use serde_json::{json, Value};
 use tracing::info; //allows us to print to the console using info!()
 
 use crate::db::Store;
@@ -22,13 +21,21 @@ pub async fn root() {
     info!("will add later")
 }
 
-
 pub async fn get_asteroids(
     State(mut am_database): State<Store>,
 ) -> Result<Json<Vec<Asteroid>>, AppError> {
     let asteroids = am_database.get_all_asteroids().await?;
 
     Ok(Json(asteroids))
+}
+
+pub async fn get_closest(
+    State(mut am_database): State<Store>,
+    Path(query): Path<String>,
+) -> Result<Json<Asteroid>, AppError> {
+    let date = query.to_owned();
+    let closest = am_database.get_closest_by_date(date).await?;
+    Ok(Json(closest))
 }
 
 //Build functions here as we make new CRUD stuff in db.rs

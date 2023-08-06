@@ -3,8 +3,8 @@ use hyper::Body;
 use sqlx::PgPool;
 use tower::ServiceExt;
 
-use backend::routes::main_routes::app;
 use backend::models::asteroid::Asteroid;
+use backend::routes::main_routes::app;
 
 #[sqlx::test(fixtures("0001_seed_as"))]
 async fn test_get_asteroids(db_pool: PgPool) {

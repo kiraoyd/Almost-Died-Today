@@ -28,6 +28,7 @@ pub async fn app(pool: PgPool) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/asteroids", get(main_handlers::get_asteroids))
+        .route("/closest/:date", get(main_handlers::get_closest))
         //add new routes here, reads top to bottom
         //------
         //this 404 route always caps off the routes
