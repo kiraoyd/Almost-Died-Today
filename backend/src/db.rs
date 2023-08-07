@@ -9,8 +9,7 @@ use tracing::info;
 
 //add use crate statements for the structs we will write eventually
 use crate::error::AppError;
-use crate::models::asteroid::DiameterInfo;
-use crate::models::asteroid::{Asteroid, AsteroidId};
+use crate::models::asteroid::{NearEarthObject};
 
 use crate::pull_nasa_api_data; //imports from lib.rs
 
@@ -73,7 +72,7 @@ impl Store {
     }
 */
     ///Posts Vec of Asteroids to our database
-    pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
+    pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<NearEarthObject>, AppError> {
 
         // let today = chrono::offset::Utc::now();
         // let naive_today = today.date().naive_utc();  //chatGPT

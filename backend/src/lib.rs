@@ -13,7 +13,7 @@ use std::str::FromStr;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use models::asteroid::{Asteroid};
+use models::asteroid::{Asteroid, NearEarthObject};
 use serde_json::{json, Value};
 
 use std::collections::HashMap;
@@ -88,7 +88,7 @@ pub struct ApiResponse {
 
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
 /// The API only allows for up to 7 days worth of data to be pulled
-pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppError> {
+pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>, AppError> {
     dotenv().ok();
     //get the API key from .env
     let api_key = std::env::var("NASA_API_KEY").unwrap();
@@ -111,19 +111,16 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<Asteroid>, AppErr
     //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
     //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
     //TODO serde is having a hard time deserializing, because my Asteroid struct expects Option<i32>s?
-    let parsed_asteroids: ApiResponse = serde_json::from_str(&body)?; //deserialize JSON into an ApiResponse struct
+    let parsed_asteroids: Asteroid = serde_json::from_str(&body)?; //deserialize JSON into an Asteroid struct
     let data = parsed_asteroids.near_earth_objects.clone(); //grab just the HashMap<String, Vec<Asteroid>> from ApiResponse
 
-    //println!("Response: {}", all_asteroids);
-
     //collect all the Vec<Asteroids> in data, into one big Vec
-    let mut every_asteroid: Vec<Asteroid> = Vec::new();
+    let mut every_asteroid: Vec<NearEarthObject> = Vec::new();
 
     //data is a hashmap where each string key is a date, and each associated value is a Vec<Asteroid>
     for (date,asteroid) in data.iter() {
         every_asteroid.extend(asteroid.clone())
     }
-
     Ok(every_asteroid)
 }
 

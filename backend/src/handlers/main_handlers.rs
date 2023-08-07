@@ -8,7 +8,7 @@ use tracing::info; //allows us to print to the console using info!()
 
 use crate::db::Store;
 use crate::error::AppError;
-use crate::models::asteroid::Asteroid;
+use crate::models::asteroid::{Asteroid, NearEarthObject};
 
 //bring in the models files here
 
@@ -33,7 +33,7 @@ pub async fn get_asteroids(
 
 pub async fn post_current_nasa(
     State(mut am_database): State<Store>,
-) -> Result<Json<Vec<Asteroid>>, AppError> {
+) -> Result<Json<Vec<NearEarthObject>>, AppError> {
     let posted = am_database.add_current_from_nasa_api().await?;
 
     Ok(Json(posted))
