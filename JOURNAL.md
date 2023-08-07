@@ -150,7 +150,7 @@ That way I don't need to change the SQL or actually, much of the routes either, 
 Ok that wasn't so bad, It's running! 
 
 Still to do: Post the nasa data to the database
-Add authorization
+Add authorization (just do it like we did in class, with user table storing id and password)
 Add a frontend to display data (build out index.html)
 Fix the get closest by date route to handle when there is noting found for the date requested
 

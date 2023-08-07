@@ -9,7 +9,7 @@ use tracing::info;
 
 //add use crate statements for the structs we will write eventually
 use crate::error::AppError;
-use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum};
+use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum, AsteroidId};
 
 use crate::pull_nasa_api_data; //imports from lib.rs
 
@@ -55,7 +55,7 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: row.id,
+                    id: AsteroidId(row.id),
                     name: row.name.to_string(),
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
@@ -72,15 +72,91 @@ impl Store {
     }
 
     ///Posts Vec of Asteroids to our database
-    pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<NearEarthObject>, AppError> {
+    //TODO change the return type once we post
+    pub async fn post_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
 
         // let today = chrono::offset::Utc::now();
         // let naive_today = today.date().naive_utc();  //chatGPT
         let today: NaiveDate = Local::today().naive_utc();
-        let nasa_data = pull_nasa_api_data(today).await?;
+        let asteroids = pull_nasa_api_data(today).await?;
 
-        //TODO once we get the nasa_data to be in the right form, we can post the data to the database
-        Ok(nasa_data)
+        //Now we have a Vec<NearEarthObjects>, inside asteroids, lets get the relevant data posted to the table
+        // Then lets parse the posted values to an Asteroid struct and send it to the database
+
+        let mut added_asteroids: Vec<Asteroid> = Vec::new(); //will add each posted Asteroid for the response
+        for asteroid in asteroids {
+            //convert from string to NaiveDate
+            let date = asteroid.close_approach_data[0].close_approach_date;
+            let parsed_date = NaiveDate::parse_from_str(date, "%Y-%m-%d");
+            let approach_date: NaiveDate = match parsed_date {
+                Ok(date) => date,
+                Err(err) => {
+                    println!("Error: {}", err);
+                    NaiveDate::from_ymd(2000,1,1) //default
+                }
+            };
+
+            //convert from string to NaiveDateTime
+            let datetime = asteroid.close_approach_data[0].close_approach_date_full;
+            let parsed_datetime = NaiveDate::parse_from_str(datetime, "%Y-%m-%d");
+            let approach_datetime: NaiveDate = match parsed_datetime {
+                Ok(date) => date,
+                Err(err) => {
+                    println!("Error: {}", err);
+                    NaiveDate::from_ymd(2000,1,1) //default
+                }
+            };
+
+
+            //these variable make the query easier to read
+            let name = asteroid.name;
+            let size_meters_min =asteroid.estimated_diameter.meters.estimated_diameter_min;
+            let size_meters_max =asteroid.estimated_diameter.meters.estimated_diameter_max;
+            let size_kmeters_min = asteroid.estimated_diameter.kilometers.estimated_diameter_min;
+            let size_kmeters_max = asteroid.estimated_diameter.kilometers.estimated_diameter_max;
+            let size_miles_max = asteroid.estimated_diameter.miles.estimated_diameter_min;
+            let size_miles_min = asteroid.estimated_diameter.miles.estimated_diameter_min;
+            let size_feet_min = asteroid.estimated_diameter.feet.estimated_diameter_min;
+            let size_feet_max = asteroid.estimated_diameter.feet.estimated_diameter_max;
+            let hazardous = asteroid.is_potentially_hazardous_asteroid;
+            let velocity_mph = asteroid.close_approach_data[0].relative_velocity.miles_per_hour;
+            let miss_distance_miles = asteroid.close_approach_data[0].miss_distance.miles;
+            let orbiting_body = asteroid.close_approach_data[0].orbiting_body;
+            let mut res = sqlx::query!(
+            r#" INSERT INTO asteroids (name, diameter_meters_min, diameter_meters_max, diameter_kmeters_min, diameter_kmeters_max, diameter_miles_max, diameter_miles_min, diameter_feet_min, diameter_feet_max, is_hazardous, close_approach_date, close_approach_datetime, relative_velocity_mph, miss_distance_miles, orbiting_body)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * "#,
+                name, size_meters_min,size_meters_max, size_kmeters_min ,size_kmeters_max,size_miles_max, size_miles_min, size_feet_min, size_feet_max, hazardous, approach_date, approach_datetime, velocity_mph, miss_distance_miles, orbiting_body,
+                )
+                .fetch_one(&self.conn_pool)
+                .await?;
+
+            //Make an Asteroid struct and add it to a Vec of Asteroids
+            let size_info = DiameterInfo {
+                diameter_meters_min: res.diameter_meters_min,
+                diameter_meters_max: res.diameter_meters_max,
+                diameter_kmeters_min: res.diameter_kmeters_min,
+                diameter_kmeters_max: res.diameter_kmeters_max,
+                diameter_miles_max: res.diameter_miles_max,
+                diameter_miles_min: res.diameter_miles_min,
+                diameter_feet_min: res.diameter_feet_min,
+                diameter_feet_max: res.diameter_feet_max,
+            };
+            let added = Asteroid {
+                id: AsteroidId(res.id),
+                name: res.name.to_string(),
+                diameter: Some(size_info),
+                is_hazardous: res.is_hazardous.map(|x| x), //map returns None if x is of no value
+                close_approach_date: res.close_approach_date.map(|x| x),
+                close_approach_datetime: res.close_approach_datetime.map(|x| x),
+                relative_velocity_mph: FloatNum(res.relative_velocity_mph.map(|x| x)),
+                miss_distance_miles: FloatNum(res.miss_distance_miles.map(|x| x)),
+                orbiting_body: res.orbiting_body.map(|x| x),
+            };
+
+            added_asteroids.push(added);
+        }
+
+        Ok(added_asteroids)
     }
 
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
@@ -112,7 +188,7 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: row.id,
+                    id: AsteroidId(row.id),
                     name: row.name.to_string(),
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value

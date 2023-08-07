@@ -121,10 +121,11 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
 }
 
 /// Basic macro to create a newtype for a database ID.
-#[macro_export]
+//Macros cannot manipulate strings when they come from the tokens themselves
+#[macro_export]  //we need to do this since this lives in a module and it needs to export to the top level
 macro_rules! make_db_id {
-    ($name:ident) => {
-        paste::paste! {
+    ($name:ident) => { //the argument we pass to the macro will replace $name, 'ident' tells rust that whatever we are passing in happens to be an identifier (identifying a particular struct)
+        paste::paste! { //paste is a crate that takes the stuff inside [<>] and pastes it together (concatenates strings)
             #[derive(
                 Clone,
                 Copy,
@@ -152,7 +153,7 @@ macro_rules! make_db_id {
                 }
             }
 
-            pub trait [<Into $name>] {
+            pub trait [<Into $name>] { //here paste concatenates Into and the arg replacing $name
                 fn into_id(self) -> $name;
             }
 

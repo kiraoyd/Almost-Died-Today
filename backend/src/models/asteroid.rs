@@ -16,11 +16,18 @@ make_db_id!(AsteroidId);
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
 pub struct FloatNum(pub Option<f64>);
 
+//needed to use the serde_aux crate to convert strings to numbers
 impl FromStr for FloatNum {
     type Err = ParseFloatError;
-
     fn from_str(s: &str) -> Result<FloatNum, Self::Err>{
         Ok(FloatNum(Some(f64::from_str(s)?)))
+    }
+}
+//needed to use the serde_aux crate to convert strings to numbers
+impl FromStr for AsteroidId {
+    type Err = ParseIntError;
+    fn from_str(s: &str) -> Result<AsteroidId, Self::Err>{
+        Ok(AsteroidId(i32::from_str(s)?))
     }
 }
 
@@ -91,9 +98,9 @@ pub struct CloseApproachData {
 ///Contains values for relative velocity in three different units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RelativeVelocity {
-    pub kilometers_per_second: Option<String>,
-    pub kilometers_per_hour: Option<String>,
-    pub miles_per_hour: Option<String>,
+    pub kilometers_per_second: FloatNum,
+    pub kilometers_per_hour: FloatNum,
+    pub miles_per_hour: FloatNum,
 }
 
 
@@ -127,7 +134,7 @@ pub struct MissDistance {
 )]
 pub struct Asteroid {
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub id: i32,
+    pub id: AsteroidId,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub name: String,
     pub diameter: Option<DiameterInfo>,

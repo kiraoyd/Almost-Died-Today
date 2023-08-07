@@ -26,7 +26,7 @@ pub async fn app(pool: PgPool) -> Router {
     let (cors_layer, trace_layer) = layers::get_layers();
 
     Router::new()
-        .route("/", get(root))
+        .route("/", get(root))  //here is where we build ALL our html stuff too
         .route("/asteroids", get(main_handlers::get_asteroids))
         .route("/closest/:date", get(main_handlers::get_closest))
         .route("/current_asteroids", post(main_handlers::post_current_nasa))
@@ -35,6 +35,8 @@ pub async fn app(pool: PgPool) -> Router {
         //this 404 route always caps off the routes
         .route("/*_", get(handle_404)) //if no other route is found, we have a page note found 404 error
         //.merge(route_file()) //uncomment this once we have more route files to merge
+        //merge multiple routers together, we pass other routers into the .merge() function
+        //The types of all the routers you merge HAS to be the same, meaning
         .layer(cors_layer)
         .layer(trace_layer)
         .with_state(db.clone())
@@ -70,6 +72,9 @@ async fn handle_404() -> Response<Body> {
    why those Arc<Mutex> were necessary!
 
 */
+
+//This is how we make a route that will be merged into our router, it's a little utility function
+//Whatever T is, if it has references in it, it must live for the life of the program, that's what the T: line does
 pub fn merged_route<T>(path: &str, method_router: MethodRouter<T>) -> Router<T>
 where
     T: Clone + Send + Sync + 'static,

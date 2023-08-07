@@ -17,8 +17,21 @@ use crate::models::asteroid::{Asteroid, NearEarthObject};
 
 #[allow(dead_code)]
 pub async fn root() {
-    //Does nothing right now
-    info!("will add later")
+    //use Tera to load everything from our templates.rs file, into a Hasmap of templates
+    //Then we tell this route which one we want to render, and provide it the context
+
+    //The context is where we can add dynamic data to our templates
+    let mut context = Context::new();
+    context.insert("name", "Casey"); //here is where we build little bits of context
+
+    //Along with that context and template, Tera will render everything
+    let rendered = TEMPLATES
+        .render("index.html", &context) //if someone is logged in, send them here (or whatever page you want to be restricted by login)
+        .unwrap_or_else(|err| {
+            error!("Template rendering error: {}", err);
+            panic!()
+        });
+    Html(rendered) //Then we send the html back
 }
 
 pub async fn get_asteroids(
@@ -33,8 +46,8 @@ pub async fn get_asteroids(
 
 pub async fn post_current_nasa(
     State(mut am_database): State<Store>,
-) -> Result<Json<Vec<NearEarthObject>>, AppError> {
-    let posted = am_database.add_current_from_nasa_api().await?;
+) -> Result<Json<Vec<Asteroid>>, AppError> {
+    let posted = am_database.post_current_from_nasa_api().await?;
 
     Ok(Json(posted))
 }
