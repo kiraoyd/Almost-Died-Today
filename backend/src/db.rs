@@ -9,7 +9,7 @@ use tracing::info;
 
 //add use crate statements for the structs we will write eventually
 use crate::error::AppError;
-use crate::models::asteroid::{NearEarthObject};
+use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum};
 
 use crate::pull_nasa_api_data; //imports from lib.rs
 
@@ -35,7 +35,7 @@ impl Store {
         Self { conn_pool: pool }
     }
 
-/*
+
     pub async fn get_all_asteroids(&mut self) -> Result<Vec<Asteroid>, AppError> {
         let rows = sqlx::query!(r#" SELECT * FROM asteroids"#)
             .fetch_all(&self.conn_pool)
@@ -55,14 +55,14 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: Some(row.id.into()),
-                    name: Some(row.name),
+                    id: row.id,
+                    name: row.name.to_string(),
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
                     close_approach_date: row.close_approach_date.map(|x| x),
                     close_approach_datetime: row.close_approach_datetime.map(|x| x),
-                    relative_velocity_mph: row.relative_velocity_mph.map(|x| x),
-                    miss_distance_miles: row.miss_distance_miles.map(|x| x),
+                    relative_velocity_mph: FloatNum(row.relative_velocity_mph.map(|x| x)),
+                    miss_distance_miles: FloatNum(row.miss_distance_miles.map(|x| x)),
                     orbiting_body: row.orbiting_body.map(|x| x),
                 }
             })
@@ -70,7 +70,7 @@ impl Store {
 
         Ok(asteroids)
     }
-*/
+
     ///Posts Vec of Asteroids to our database
     pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<NearEarthObject>, AppError> {
 
@@ -82,7 +82,7 @@ impl Store {
         //TODO once we get the nasa_data to be in the right form, we can post the data to the database
         Ok(nasa_data)
     }
-/*
+
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
     pub async fn get_closest_by_date(&mut self, today: String) -> Result<Asteroid, AppError> {
@@ -112,14 +112,14 @@ impl Store {
                     diameter_feet_max: row.diameter_feet_max,
                 };
                 Asteroid {
-                    id: Some(row.id.into()),
-                    name: Some(row.name),
+                    id: row.id,
+                    name: row.name.to_string(),
                     diameter: Some(size_info),
                     is_hazardous: row.is_hazardous.map(|x| x), //map returns None if x is of no value
                     close_approach_date: row.close_approach_date.map(|x| x),
                     close_approach_datetime: row.close_approach_datetime.map(|x| x),
-                    relative_velocity_mph: row.relative_velocity_mph.map(|x| x),
-                    miss_distance_miles: row.miss_distance_miles.map(|x| x),
+                    relative_velocity_mph: FloatNum(row.relative_velocity_mph.map(|x| x)),
+                    miss_distance_miles: FloatNum(row.miss_distance_miles.map(|x| x)),
                     orbiting_body: row.orbiting_body.map(|x| x),
                 }
             })
@@ -127,16 +127,16 @@ impl Store {
 
         //total_cmp sorts the Vec from decreasing to increasing order
         asteroids.sort_by(|a, b| {
-            a.miss_distance_miles
+            a.miss_distance_miles.0 //Floatnum type
                 .unwrap()
-                .total_cmp(&b.miss_distance_miles.unwrap())
+                .total_cmp(&b.miss_distance_miles.0.unwrap()) //FloatNum type
         });
         //iterate from the start of asteroids until we find the first asteroid with a valid miss_distance_miles value
         let mut index = 0;
         let mut found = false;
         let mut closest_call = asteroids[index].clone();
         while index < asteroids.len() && !found {
-            match asteroids[index].miss_distance_miles {
+            match asteroids[index].miss_distance_miles.0 { //FloatNum type
                 Some(x) => {
                     found = true;
                     let closest_call = asteroids[index].clone();
@@ -163,5 +163,5 @@ impl Store {
     //     //iterate through rows and pick out the asteroid with the biggest max diameter
     // }
 
- */
+
 }

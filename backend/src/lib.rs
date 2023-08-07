@@ -13,7 +13,7 @@ use std::str::FromStr;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use models::asteroid::{Asteroid, NearEarthObject};
+use models::asteroid::{NasaData, NearEarthObject};
 use serde_json::{json, Value};
 
 use std::collections::HashMap;
@@ -81,10 +81,6 @@ fn init_logging() {
         .init();
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ApiResponse {
-    near_earth_objects: HashMap<String, Vec<Asteroid>>,
-}
 
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
 /// The API only allows for up to 7 days worth of data to be pulled
@@ -93,7 +89,7 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     //get the API key from .env
     let api_key = std::env::var("NASA_API_KEY").unwrap();
     //pull up to a years worth of data before the requested date
-    let start_date = date - Duration::days(1);
+    let start_date = date - Duration::days(7);
 
     println!("{},{}", start_date, date);
     let client = Client::new();
@@ -111,7 +107,7 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
     //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
     //TODO serde is having a hard time deserializing, because my Asteroid struct expects Option<i32>s?
-    let parsed_asteroids: Asteroid = serde_json::from_str(&body)?; //deserialize JSON into an Asteroid struct
+    let parsed_asteroids: NasaData = serde_json::from_str(&body)?; //deserialize JSON into an Asteroid struct
     let data = parsed_asteroids.near_earth_objects.clone(); //grab just the HashMap<String, Vec<Asteroid>> from ApiResponse
 
     //collect all the Vec<Asteroids> in data, into one big Vec

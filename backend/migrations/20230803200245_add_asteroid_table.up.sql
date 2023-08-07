@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS asteroids
 (
     id                          serial PRIMARY KEY,
-    name                        text NOT NULL,
+    name                        varchar(255) NOT NULL,
     diameter_meters_min         float,
     diameter_meters_max         float,
     diameter_kmeters_min        float,

@@ -20,7 +20,7 @@ pub async fn root() {
     //Does nothing right now
     info!("will add later")
 }
-/*
+
 pub async fn get_asteroids(
     State(mut am_database): State<Store>,
 ) -> Result<Json<Vec<Asteroid>>, AppError> {
@@ -29,7 +29,7 @@ pub async fn get_asteroids(
     Ok(Json(asteroids))
 }
 
- */
+
 
 pub async fn post_current_nasa(
     State(mut am_database): State<Store>,
@@ -39,7 +39,7 @@ pub async fn post_current_nasa(
     Ok(Json(posted))
 }
 
-/*
+
 pub async fn get_closest(
     State(mut am_database): State<Store>,
     Path(query): Path<String>,
@@ -49,7 +49,7 @@ pub async fn get_closest(
     Ok(Json(closest))
 }
 
- */
+
 
 //Build functions here as we make new CRUD stuff in db.rs
 //all handlers call some function from db.store

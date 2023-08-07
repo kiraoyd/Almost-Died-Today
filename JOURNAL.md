@@ -140,9 +140,19 @@ Bart helped out on Zulip and pointed me in the direction of a HashMap.
 I think I got it set up, but the issue now is getting serde to deserialize from the JSON response into my Rust Struct Types.
 I'm hitting a wall so I'll have to return to this later.
 
+Ahahahahahahaha (maniacal laughter continues)....so After much pain I have finally figured out what's wrong: My Rust struct and the incoming NASA JSON were not matching, and they have to EXACTLY match in every way or serde gets mad.
+I could have left out some feilds with data I didn't want, serde can handle that, but after a day lost to this, I decided to bite the bullet and feed ChatGPT the NASA JSON and ask it really nicely to show me the Rust struct equivalents.
+I am not sorry I did this, the struct heirarchy for this API was kind of crazy, and what chatGPT gave me was way nicer than what I would have produced.
+I adjusted some things like making feilds public, and adjusting the Derives a bit, as well as making All the necesary feilds Options and handling the one case where I needed a String to deserialize into a number.
+So NOW all I need to do is go back through the code I'd previously written (commented out at this commit to test the NASA route easily), and redo with the new struct structures.
+Actually I think I can keep the old Asteroid struct (renaming it tho) to represent the data I want stored from that API response, in my database.
+That way I don't need to change the SQL or actually, much of the routes either, I'll just need to be careful how I post from the new ASteroid struct to the darabase representation one.
+Ok that wasn't so bad, It's running! 
+
 Still to do: Post the nasa data to the database
 Add authorization
 Add a frontend to display data (build out index.html)
+Fix the get closest by date route to handle when there is noting found for the date requested
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 

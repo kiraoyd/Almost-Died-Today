@@ -14,7 +14,7 @@ use std::collections::HashMap;
 make_db_id!(AsteroidId);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
-pub struct FloatNum(Option<f64>);
+pub struct FloatNum(pub Option<f64>);
 
 impl FromStr for FloatNum {
     type Err = ParseFloatError;
@@ -23,29 +23,26 @@ impl FromStr for FloatNum {
         Ok(FloatNum(Some(f64::from_str(s)?)))
     }
 }
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
-pub struct Float(f64);
 
-impl FromStr for Float {
-    type Err = ParseFloatError;
 
-    fn from_str(s: &str) -> Result<Float, Self::Err>{
-        Ok(Float(f64::from_str(s)?))
-    }
-}
-//TODO I need the Asteroid struct to match EXACTLY with the JSON data, having chatGPT do it for me based on the JSON data returning from the response
+///Holds the response from NASA's NeoW's API
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Asteroid {
+pub struct NasaData {
     pub links: Links,
     pub element_count: Option<i32>,
     pub near_earth_objects: HashMap<String, Vec<NearEarthObject>>,
 }
+
+///Defines the possible feilds in the Links feild of NasaData
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Links {
     pub next: Option<String>,
     pub previous: Option<String>,
     pub self_link: Option<String>,
 }
+
+///Holds all data pertaining to a specific asteroid close call
+/// Will be used in all routing and has all info needed for our database
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NearEarthObject {
     pub links: Links,
@@ -61,6 +58,8 @@ pub struct NearEarthObject {
     pub is_sentry_object: bool,
 }
 
+///Contains information about diameter min and max for these specific units of measurement
+//TODO, do these need to be options too?
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EstimatedDiameter {
     pub kilometers: Diameter,
@@ -69,12 +68,15 @@ pub struct EstimatedDiameter {
     pub feet: Diameter,
 }
 
+
+///Contains the min and max values for some unit of measurements diameter values
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Diameter {
     pub estimated_diameter_min: Option<f64>,
     pub estimated_diameter_max: Option<f64>,
 }
 
+///Contains the information contained in the CloseApproachData section of a NearEarthObject
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CloseApproachData {
     pub close_approach_date: Option<String>,
@@ -85,6 +87,8 @@ pub struct CloseApproachData {
     pub orbiting_body: Option<String>,
 }
 
+
+///Contains values for relative velocity in three different units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RelativeVelocity {
     pub kilometers_per_second: Option<String>,
@@ -92,26 +96,22 @@ pub struct RelativeVelocity {
     pub miles_per_hour: Option<String>,
 }
 
+
+///Contains values for miss distance in four units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MissDistance {
-    pub astronomical: Option<String>,
-    pub lunar: Option<String>,
-    pub kilometers: Option<String>,
-    pub miles: Option<String>,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub astronomical: FloatNum,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub lunar: FloatNum,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub kilometers: FloatNum,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub miles: FloatNum,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-/*
+///Struct for modeling the NASA data to the AlmostDiedToday database (only contains the info from NasaData that we actually need)
 #[derive(Clone, Debug, Display, Serialize, Deserialize, sqlx::FromRow)]
 #[display(
     fmt = "id: {:?}, name: {:?}, diameter: {:?}, is_hazardous: {:?}, close_approach_date: {:?}, close_approach_datetime: {:?}, relative_velocity_mph: {:?}, miss_distance_miles: {:?}, orbiting_body: {:?}  ",
@@ -121,26 +121,28 @@ pub struct MissDistance {
     is_hazardous,
     close_approach_date,
     close_approach_datetime,
-    relative_velocity,
-    miss_distance,
+    relative_velocity_mph,
+    miss_distance_miles,
     orbiting_body
 )]
 pub struct Asteroid {
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub id: Float, // TODO: Making this PKID an Option and trying to map it in db.rs creates a buggy compiler error
+    pub id: i32,
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub name: String, //TODO: This is also a not null value, will likly trigger the same thing if left and mapped
+    pub name: String,
     pub diameter: Option<DiameterInfo>,
     pub is_hazardous: Option<bool>,
     pub close_approach_date: Option<NaiveDate>,
     pub close_approach_datetime: Option<NaiveDateTime>,
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub close_approach_data: FloatNum,
+    pub relative_velocity_mph: FloatNum,
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub miss_distance: FloatNum,
+    pub miss_distance_miles: FloatNum,
     pub orbiting_body: Option<String>,
 }
 
+
+///Contains the specific diameter info for a particular asteroid
 #[derive(Clone, Debug, Display, Serialize, Deserialize, sqlx::FromRow)]
 #[display(
     fmt = "diameter_meters_min: {:?}, diameter_meters_max: {:?}, diameter_kmeters_min: {:?}, diameter_kmeters_max: {:?}, diameter_miles_max: {:?}, diameter_miles_min: {:?}, diameter_feet_min: {:?}, diameter_feet_max: {:?} ",
@@ -154,17 +156,17 @@ pub struct Asteroid {
     diameter_feet_max
 )]
 pub struct DiameterInfo {
-    pub diameter_meters_min: FloatNum,
-    pub diameter_meters_max: FloatNum,
-    pub diameter_kmeters_min: FloatNum,
-    pub diameter_kmeters_max: FloatNum,
-    pub diameter_miles_max: FloatNum,
-    pub diameter_miles_min: FloatNum,
-    pub diameter_feet_min: FloatNum,
-    pub diameter_feet_max: FloatNum,
+    pub diameter_meters_min: Option<f64>,
+    pub diameter_meters_max: Option<f64>,
+    pub diameter_kmeters_min: Option<f64>,
+    pub diameter_kmeters_max: Option<f64>,
+    pub diameter_miles_max: Option<f64>,
+    pub diameter_miles_min: Option<f64>,
+    pub diameter_feet_min: Option<f64>,
+    pub diameter_feet_max: Option<f64>,
 }
 
- */
+
 
 
 
