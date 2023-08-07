@@ -36,7 +36,7 @@ impl Store {
         Self { conn_pool: pool }
     }
 
-
+/*
     pub async fn get_all_asteroids(&mut self) -> Result<Vec<Asteroid>, AppError> {
         let rows = sqlx::query!(r#" SELECT * FROM asteroids"#)
             .fetch_all(&self.conn_pool)
@@ -71,7 +71,7 @@ impl Store {
 
         Ok(asteroids)
     }
-
+*/
     ///Posts Vec of Asteroids to our database
     pub async fn add_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
 
@@ -83,7 +83,7 @@ impl Store {
         //TODO once we get the nasa_data to be in the right form, we can post the data to the database
         Ok(nasa_data)
     }
-
+/*
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
     pub async fn get_closest_by_date(&mut self, today: String) -> Result<Asteroid, AppError> {
@@ -163,4 +163,6 @@ impl Store {
     //
     //     //iterate through rows and pick out the asteroid with the biggest max diameter
     // }
+
+ */
 }

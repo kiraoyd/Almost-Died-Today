@@ -142,7 +142,7 @@ I'm hitting a wall so I'll have to return to this later.
 
 Still to do: Post the nasa data to the database
 Add authorization
-Add a frontend to display data
+Add a frontend to display data (build out index.html)
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 

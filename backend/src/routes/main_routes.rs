@@ -27,8 +27,8 @@ pub async fn app(pool: PgPool) -> Router {
 
     Router::new()
         .route("/", get(root))
-        .route("/asteroids", get(main_handlers::get_asteroids))
-        .route("/closest/:date", get(main_handlers::get_closest))
+        //.route("/asteroids", get(main_handlers::get_asteroids))
+        //.route("/closest/:date", get(main_handlers::get_closest))
         .route("/current_asteroids", post(main_handlers::post_current_nasa))
         //add new routes here, reads top to bottom
         //------

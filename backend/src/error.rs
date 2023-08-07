@@ -17,6 +17,7 @@ pub enum AppError {
     #[allow(dead_code)]
     Any(anyhow::Error),
     MissingContent,
+    SerdeJson(serde_json::Error),
 
 }
 
@@ -36,6 +37,10 @@ impl IntoResponse for AppError {
                 let message = format!("We could not complete the request {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, message)
                 }
+            AppError::SerdeJson(err) => {
+                let message = format!("We couldn't deserialize or serialize your data with serde. {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, message)
+            }
             AppError::Any(err) => {
                 let message = format!("Internal server error! {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, message)
@@ -79,3 +84,10 @@ impl From<reqwest::Error> for AppError {
         AppError::Request(value)
     }
 }
+
+impl From<serde_json::Error> for AppError {
+    fn from(value: serde_json::Error) -> Self {
+        AppError::SerdeJson(value)
+    }
+}
+
