@@ -10,28 +10,47 @@ use crate::db::Store;
 use crate::error::AppError;
 use crate::models::asteroid::{Asteroid, NearEarthObject};
 
+use crate::template::TEMPLATES;
 //bring in the models files here
 
 //we need the templates crate at some point
 //use crate::template::TEMPLATES;
 
 #[allow(dead_code)]
-pub async fn root() {
+pub async fn root(
+    State(am_database): State<Store>,
+    OptionalClaims(claims): OptionalClaims,
+) -> Result<Html<String>, AppError> {
     //use Tera to load everything from our templates.rs file, into a Hasmap of templates
     //Then we tell this route which one we want to render, and provide it the context
+    //Any context we establish here, we will be able to pull in to any of our html pages
 
-    //The context is where we can add dynamic data to our templates
+    //The context is where we can add in dynamic data values to our html
+    //TODO update this to the class projects format
     let mut context = Context::new();
-    context.insert("name", "Casey"); //here is where we build little bits of context
 
+    //set up what we want to render with, all contexts go here now
+    let template_name = if let Some(claims_data) = claims {
+        context.insert("claims", &claims.data);
+        context.insert("is_logged_in", &true);
+
+        //TODO make the get_all_asteroid_pages function in db.rs
+        let page_packages = am_database.get_all_asteroid_pages().await?;
+        context.insert("page_packages", &page_packages);
+        "pages.html"
+    } else {
+        context.insert("is_logged_in", &false);
+        "index.html"
+    };
     //Along with that context and template, Tera will render everything
     let rendered = TEMPLATES
-        .render("index.html", &context) //if someone is logged in, send them here (or whatever page you want to be restricted by login)
+        //Convert this to class project, where we pass a variable called "template_name" TODO
+        .render(template_name, &context) //render takes all the context in template_name
         .unwrap_or_else(|err| {
             error!("Template rendering error: {}", err);
             panic!()
         });
-    Html(rendered) //Then we send the html back
+    Ok(Html(rendered)) //Then we send the html back
 }
 
 pub async fn get_asteroids(

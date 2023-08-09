@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--links to CSS and JS if we had them, go in the header-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width-device-width, initial-scale-1.0">
+    <title>Almost Died Today - Potentially Deadly Asteroids</title>
+</head>
+<body>
+<!--Everything you see on a website-->
+<h1> Asteroids that almost killed us</h1>
+<!--Just splash in the rust whenever you need it-->
+{% for package in page_packages %}
+<!--Goes through the page_package vector and returns a package of things-->
+<!--If you want to write CSS, match it to any class tag in a div, h2, etc to apply styles-->
+<div class="package">
+<!--    Since we are using templates, we can reach in and grab what we want and put it in the {{}}-->
+    <h2> Near miss: {{package.question.question.title}} </h2>
+    <p>Content: {{pacakge.question.question.content}} </p>
+<!--    etc etc...-->
+</div>
+{% endfor %}
+
+</body>
+
+</html><!--Page where people go when logged in-->

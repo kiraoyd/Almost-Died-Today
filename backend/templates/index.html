@@ -1,12 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-
+<!--links to CSS and JS if we had them, go in the header-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width-device-width, initial-scale-1.0">
+    <title>Almost Died Today</title>
+</head>
 <body>
-<div id="content">{% block content %}{% endblock content %}</div>
-<div id="footer">
-    {% block footer %}
-    &copy; Copyright 2008 by <a href="http://domain.invalid/">{{ name }}</a>.
-    {% endblock footer %}
-</div>
+<!--Everything you see on a website-->
+{% id is_logged_in %}
+<!--Show dashboard-->
+<h2>Dashboard</h2>
+<ul>
+<!--    The link here navigates around out own site-->
+    <li><a href="/asteroids">View all Asteroids</a></li>
+    <li><a href="/current_asteroids">See all current asteroids</a></li>
+</ul>
+
+{% else %}
+<!--show login form-->
+<h2> Login</h2>
+
+<!--action is the path it will take when someone hits submit, which endpoint does the form data go to?-->
+<!--But we can't send JSON, so we need to send Form(creds): Form<User> as the arg to our login function-->
+<form action="/login" method="post">
+    <label for ="email">Email: </label>
+<!--    id and name are so we can reference them, these are the names that come into our handler-->
+    <input type="text" id="email" name="email">
+<!--    Just a box we can type into-->
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password">
+<!--    When anyone clicks submit, it will runn the action on the form-->
+    <input type="submit" value="login">
+</form>
+{% endif %}
 </body>
+
 </html>

@@ -240,4 +240,9 @@ impl Store {
     // }
 
 
+    pub async fn get_all_asteroid_pages(&self) -> Result<Vec<PagePackage>, AppError>{
+        //here is where we will package up allll the data we want to display on the main page
+        //returns a page package
+    }
+
 }
