@@ -1,6 +1,6 @@
 use argon2::Config; //for hashing the password
 use axum::extract::{Path, Query, State};
-use axum::response::Html;
+use axum::response::{Html, Response};
 use axum::{Form,Json};
 //HWT token stuff
 use http::header::{LOCATION, SET_COOKIE};
@@ -26,7 +26,7 @@ use crate::template::TEMPLATES;
 
 #[allow(dead_code)]
 pub async fn root(
-    State(am_database): State<Store>,
+    State(mut am_database): State<Store>, //has to be mutable to let db.rs call one of it's own function inside another of its functions
     OptionalClaims(claims): OptionalClaims,
 ) -> Result<Html<String>, AppError> {
 
@@ -40,12 +40,12 @@ pub async fn root(
     //set up what we want to render with, all contexts go here now and will be available to the specified .html files
     let template_name = if let Some(claims_data) = claims {
         //user is logged in and we have the claims to prove it
-        context.insert("claims", &claims.data);
+        context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
 
         //TODO make the get_all_asteroid_pages function in db.rs
-        let page_packages = am_database.get_all_asteroid_pages().await?;
-        context.insert("page_packages", &page_packages);
+        let page_package = am_database.get_main_page().await?;
+        context.insert("page_packages", &page_package);
         "pages.html" //route to logged in template when logged in
     } else {
         //user is NOT logged in
@@ -108,7 +108,7 @@ pub async fn get_closest(
 /// database and returns the users information for confirmation
 pub async fn register (
     State(mut database): State<Store>,
-    Json(mut credentials): Jsom<UserSignup>, //credentials come in from the frontend, after a user attempts to login
+    Json(mut credentials): Json<UserSignup>, //credentials come in from the frontend, after a user attempts to login
 ) -> Result<Json<Value>, AppError> {
 
     //missing feilds

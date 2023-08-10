@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use reqwest::Client;
-use chrono::{Duration, NaiveDate};
+use chrono::{Duration as ChronoDuration, NaiveDate};
 
 use derive_more::Display;
 use dotenvy::dotenv;
@@ -15,6 +15,9 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use models::asteroid::{NasaData, NearEarthObject};
 use serde_json::{json, Value};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use crate::routes::main_routes;
+
 
 use std::collections::HashMap;
 use reqwest::Response;
@@ -32,6 +35,7 @@ pub mod layers;
 pub mod models;
 pub mod routes;
 pub mod template;
+
 
 
 
@@ -90,7 +94,7 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     //get the API key from .env
     let api_key = std::env::var("NASA_API_KEY").unwrap();
     //pull up to a years worth of data before the requested date
-    let start_date = date - Duration::days(7);
+    let start_date = date - ChronoDuration::days(7);
 
     println!("{},{}", start_date, date);
     let client = Client::new();
@@ -120,6 +124,19 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     }
     Ok(every_asteroid)
 }
+
+//Credit: Casey Bailey
+pub fn get_timestamp_after_8_hours() -> u64 {
+    let now = SystemTime::now();
+    let since_epoch = now
+        .duration_since(UNIX_EPOCH)
+        .expect("Time somehow went backwards");
+    // 8 hours later
+    let eight_hours_from_now = since_epoch + Duration::from_secs(60 * 60 * 8);
+    eight_hours_from_now.as_secs()
+}
+
+pub type AppResult<T> = Result<T, AppError>;
 
 /// Basic macro to create a newtype for a database ID.
 //Macros cannot manipulate strings when they come from the tokens themselves

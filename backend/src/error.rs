@@ -13,11 +13,13 @@ pub enum AppError {
     UserAlreadyExists,
     InvalidToken,
     InternalServerError,
+    InvalidPassword,
     Request(reqwest::Error),
-    #[allow(dead_code)]
-    Any(anyhow::Error),
     MissingContent,
     SerdeJson(serde_json::Error),
+
+    #[allow(dead_code)]
+    Any(anyhow::Error),
 
 }
 
@@ -58,6 +60,7 @@ impl IntoResponse for AppError {
                 "There is already an account with that email address in the system".to_string(),
             ),
             AppError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token".to_string()),
+            AppError::InvalidPassword => (StatusCode::UNAUTHORIZED, "Invalid Password".to_string()),
             AppError::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Something terrible happened".to_string(),

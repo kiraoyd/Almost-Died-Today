@@ -162,6 +162,13 @@ Now it's time to add in the user.rs file and build out the needed functionality 
 Next I added the Register, Login, and Protected handlers to handers.rs and routes.rs.
 
 By adding all these in I realised I am missing a bunch of AppeError types and the get_user and create_user handlers.
+I will also need to add the user table to my database.
+
+Ok all that has been added, so I'm working on adding the new PagePackage struct so that we can neatly grab and return all the data we want displayed on out main page.
+I decided that since my site really just has one main page for now (displaying the current nearmiss asteroid), I would just write one d.rs function to get the main page display.
+I also only need a simple PagePackage struct for now, that contains the Asteroid for display and the messsage to give to the viewer.
+Eventually I want to implement the search function, and have a seperate page that includes a Search Bar if you are logged in.
+But for the MVP, I will just display a different message on the same main page if the user is logged in, than if they are not.
 
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)

@@ -3,13 +3,17 @@ use chrono::{Duration, NaiveDate, NaiveDateTime, Local};
 use futures::TryStreamExt;
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
-use sqlx::PgPool;
+use sqlx::{PgPool,Row};
 use std::sync::{Arc, Mutex, RwLock};
 use tracing::info;
 
 //add use crate statements for the structs we will write eventually
 use crate::error::AppError;
 use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum, AsteroidId};
+use crate::models::user::{User, UserSignup};
+
+//templating stuff
+use crate::models::page::{PagePackage};
 
 use crate::pull_nasa_api_data; //imports from lib.rs
 
@@ -35,6 +39,38 @@ impl Store {
         Self { conn_pool: pool }
     }
 
+
+    pub async fn get_user(&self, email: &str) -> Result<User, AppError>{
+        let user = sqlx::query_as::<_, User>(
+            r#"
+            SELECT email, password FROM users WHERE email = $1
+            "#,
+        )
+            .bind(email)
+            .fetch_one(&self.conn_pool)
+            .await?;
+
+        Ok(user)
+    }
+
+    pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError>{
+        //TODO should encrypt passswords using bcrypt
+        let result = sqlx::query("INSERT INTO users(email, password) VALUES ($1, $2)")
+            .bind(&user.email)
+            .bind(&user.password)
+            .execute(&self.conn_pool)
+            .await
+            .map_err(|_| AppError::InternalServerError)?;
+
+        if result.rows_affected() < 1 {
+            Err(AppError::InternalServerError)
+        } else {
+            Ok(Json(
+                serde_json::json!({"message": "User created successfully!"}),
+            ))
+        }
+
+    }
 
     pub async fn get_all_asteroids(&mut self) -> Result<Vec<Asteroid>, AppError> {
         let rows = sqlx::query!(r#" SELECT * FROM asteroids"#)
@@ -241,9 +277,25 @@ impl Store {
     // }
 
 
-    pub async fn get_all_asteroid_pages(&self) -> Result<Vec<PagePackage>, AppError>{
-        //here is where we will package up allll the data we want to display on the main page
-        //returns a page package
+    ///This site only has one main page for now, future features will allow for a search function
+    /// So this function serves to grab the current asteroid (the one that came closest) of the day, and return it in a PagePackage
+    pub async fn get_main_page(&mut self) -> Result<PagePackage, AppError>{
+        //get todays date
+        let today = Local::today().naive_utc().to_string();
+
+        //TODO maybe loop, and keep trying with an earlier date if near_miss is None
+        //Since calling get_closest_by_date may mutate the value of "today", self needs to be mutable here as well
+        let near_miss = self.get_closest_by_date(today).await?; //To call another impl function for the same struct, use self.functionname()
+
+        let todays_message = "You almost died today!".to_string();
+
+        let package = PagePackage {
+            asteroid: near_miss,
+            message: todays_message,
+        };
+
+        Ok(package)
+
     }
 
 }
