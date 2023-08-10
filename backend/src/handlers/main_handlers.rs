@@ -108,7 +108,7 @@ pub async fn get_closest(
 /// database and returns the users information for confirmation
 pub async fn register (
     State(mut database): State<Store>,
-    Json(mut credentials): Json<UserSignup>, //credentials come in from the frontend, after a user attempts to login
+    Form(mut credentials):Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
 ) -> Result<Json<Value>, AppError> {
 
     //missing feilds
