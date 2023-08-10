@@ -154,10 +154,14 @@ Add authorization (just do it like we did in class, with user table storing id a
 Add a frontend to display data (build out index.html)
 Fix the get closest by date route to handle when there is noting found for the date requested
 
-### 8/8/2023
+### 8/10/2023
 
 Ok, time to get Auth inserted to this thing.
 First I'm going to finish this Post route, to make sure I can add the relevant info I need to my DB.
+Now it's time to add in the user.rs file and build out the needed functionality for a User and the KEYS we use to encode and decode a JWT token.
+Next I added the Register, Login, and Protected handlers to handers.rs and routes.rs.
+
+By adding all these in I realised I am missing a bunch of AppeError types and the get_user and create_user handlers.
 
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)

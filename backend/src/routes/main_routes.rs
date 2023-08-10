@@ -29,8 +29,9 @@ pub async fn app(pool: PgPool) -> Router {
         .route("/asteroids", get(main_handlers::get_asteroids))
         .route("/closest/:date", get(main_handlers::get_closest))
         .route("/current_asteroids", post(main_handlers::post_current_nasa))
-        //add new routes here, reads top to bottom
-        //------
+        .route("/login", post(handlers::login))
+        .route("users", post(handlers::register))
+        .route("/protected", get(handlers::register))
         //this 404 route always caps off the routes
         .route("/*_", get(handle_404)) //if no other route is found, we have a page note found 404 error
         //.merge(route_file()) //uncomment this once we have more route files to merge
