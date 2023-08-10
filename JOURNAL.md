@@ -154,6 +154,12 @@ Add authorization (just do it like we did in class, with user table storing id a
 Add a frontend to display data (build out index.html)
 Fix the get closest by date route to handle when there is noting found for the date requested
 
+### 8/8/2023
+
+Ok, time to get Auth inserted to this thing.
+First I'm going to finish this Post route, to make sure I can add the relevant info I need to my DB.
+
+
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 
 1.First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"

@@ -13,10 +13,14 @@ use crate::models::asteroid::{Asteroid, NearEarthObject};
 //bring in the models files here
 
 //we need the templates crate at some point
-//use crate::template::TEMPLATES;
+use crate::template::TEMPLATES;
+//use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 
 #[allow(dead_code)]
-pub async fn root() {
+pub async fn root(
+    State(am_database): State<Store>,
+    //OptionalClaims(claims): OptionalClaims,
+    ) -> Result<Html<String>, AppError>{
     //use Tera to load everything from our templates.rs file, into a Hasmap of templates
     //Then we tell this route which one we want to render, and provide it the context
 
@@ -31,7 +35,7 @@ pub async fn root() {
             error!("Template rendering error: {}", err);
             panic!()
         });
-    Html(rendered) //Then we send the html back
+    Ok(Html(rendered)) //Then we send the html back
 }
 
 pub async fn get_asteroids(

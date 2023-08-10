@@ -1,5 +1,5 @@
 use axum::Json;
-use chrono::{Duration, NaiveDate, Local};
+use chrono::{Duration, NaiveDate, NaiveDateTime, Local};
 use futures::TryStreamExt;
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
@@ -78,7 +78,7 @@ impl Store {
         // let today = chrono::offset::Utc::now();
         // let naive_today = today.date().naive_utc();  //chatGPT
         let today: NaiveDate = Local::today().naive_utc();
-        let asteroids = pull_nasa_api_data(today).await?;
+        let asteroids = pull_nasa_api_data(today).await?; //asteroids is a Vec<NearEarthObject>
 
         //Now we have a Vec<NearEarthObjects>, inside asteroids, lets get the relevant data posted to the table
         // Then lets parse the posted values to an Asteroid struct and send it to the database
@@ -86,30 +86,30 @@ impl Store {
         let mut added_asteroids: Vec<Asteroid> = Vec::new(); //will add each posted Asteroid for the response
         for asteroid in asteroids {
             //convert from string to NaiveDate
-            let date = asteroid.close_approach_data[0].close_approach_date;
-            let parsed_date = NaiveDate::parse_from_str(date, "%Y-%m-%d");
+            let date = asteroid.close_approach_data[0].close_approach_date.clone().unwrap();
+            let parsed_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d");
             let approach_date: NaiveDate = match parsed_date {
                 Ok(date) => date,
                 Err(err) => {
                     println!("Error: {}", err);
-                    NaiveDate::from_ymd(2000,1,1) //default
+                    NaiveDate::from_ymd(2000,1,1) //default TODO
                 }
             };
 
             //convert from string to NaiveDateTime
-            let datetime = asteroid.close_approach_data[0].close_approach_date_full;
-            let parsed_datetime = NaiveDate::parse_from_str(datetime, "%Y-%m-%d");
-            let approach_datetime: NaiveDate = match parsed_datetime {
-                Ok(date) => date,
+            let datetime = asteroid.close_approach_data[0].close_approach_date_full.clone().unwrap();
+            let parsed_datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%m-%d");
+            let approach_datetime: NaiveDateTime = match parsed_datetime {
+                Ok(datetime) => datetime,
                 Err(err) => {
                     println!("Error: {}", err);
-                    NaiveDate::from_ymd(2000,1,1) //default
+                    NaiveDateTime::from_timestamp(0,0) //default
                 }
             };
 
 
             //these variable make the query easier to read
-            let name = asteroid.name;
+            let name = asteroid.name.unwrap();
             let size_meters_min =asteroid.estimated_diameter.meters.estimated_diameter_min;
             let size_meters_max =asteroid.estimated_diameter.meters.estimated_diameter_max;
             let size_kmeters_min = asteroid.estimated_diameter.kilometers.estimated_diameter_min;
@@ -119,9 +119,10 @@ impl Store {
             let size_feet_min = asteroid.estimated_diameter.feet.estimated_diameter_min;
             let size_feet_max = asteroid.estimated_diameter.feet.estimated_diameter_max;
             let hazardous = asteroid.is_potentially_hazardous_asteroid;
-            let velocity_mph = asteroid.close_approach_data[0].relative_velocity.miles_per_hour;
-            let miss_distance_miles = asteroid.close_approach_data[0].miss_distance.miles;
-            let orbiting_body = asteroid.close_approach_data[0].orbiting_body;
+            //Remember, a FloatNum is a tuple struct, you can access the f64 inside with floatnumvar.0
+            let velocity_mph = asteroid.close_approach_data[0].relative_velocity.miles_per_hour.0.unwrap();
+            let miss_distance_miles = asteroid.close_approach_data[0].miss_distance.miles.0.unwrap();
+            let orbiting_body = asteroid.close_approach_data[0].orbiting_body.clone().unwrap();
             let mut res = sqlx::query!(
             r#" INSERT INTO asteroids (name, diameter_meters_min, diameter_meters_max, diameter_kmeters_min, diameter_kmeters_max, diameter_miles_max, diameter_miles_min, diameter_feet_min, diameter_feet_max, is_hazardous, close_approach_date, close_approach_datetime, relative_velocity_mph, miss_distance_miles, orbiting_body)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * "#,

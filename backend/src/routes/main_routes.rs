@@ -20,7 +20,6 @@ use crate::handlers::main_handlers::root;
 pub async fn app(pool: PgPool) -> Router {
     let db = Store::with_pool(pool);
 
-    info!("Seeded database");
 
     //Middlewares
     let (cors_layer, trace_layer) = layers::get_layers();
