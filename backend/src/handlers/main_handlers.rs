@@ -43,6 +43,9 @@ pub async fn root(
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
 
+        //grab the nasa data
+        let added = am_database.post_current_from_nasa_api().await?;
+
         //TODO make the get_all_asteroid_pages function in db.rs
         let page_package = am_database.get_main_page().await?;
         context.insert("page_packages", &page_package);

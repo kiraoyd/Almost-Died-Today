@@ -170,6 +170,9 @@ I also only need a simple PagePackage struct for now, that contains the Asteroid
 Eventually I want to implement the search function, and have a seperate page that includes a Search Bar if you are logged in.
 But for the MVP, I will just display a different message on the same main page if the user is logged in, than if they are not.
 
+Ok everything is working with the html templates, I just can't get my css to render yet. 
+The big thing: Fix that route to grab an asteroid! What do we do if there is NO asteroid for today? 
+I need to handle that otherwise things breaaaak.
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 

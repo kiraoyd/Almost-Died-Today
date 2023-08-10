@@ -127,18 +127,19 @@ impl Store {
             let approach_date: NaiveDate = match parsed_date {
                 Ok(date) => date,
                 Err(err) => {
-                    println!("Error: {}", err);
+                    println!("Error matching dates: {}", err);
                     NaiveDate::from_ymd(2000,1,1) //default TODO
                 }
             };
 
             //convert from string to NaiveDateTime
+            //TODO erroring everytime here
             let datetime = asteroid.close_approach_data[0].close_approach_date_full.clone().unwrap();
             let parsed_datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%m-%d");
             let approach_datetime: NaiveDateTime = match parsed_datetime {
                 Ok(datetime) => datetime,
                 Err(err) => {
-                    println!("Error: {}", err);
+                    println!("Error matching datetimes: {}", err);
                     NaiveDateTime::from_timestamp(0,0) //default
                 }
             };
@@ -208,6 +209,7 @@ impl Store {
         )
         .fetch_all(&self.conn_pool)
         .await?;
+
 
         let mut asteroids: Vec<_> = rows
             .into_iter()
@@ -280,6 +282,7 @@ impl Store {
     ///This site only has one main page for now, future features will allow for a search function
     /// So this function serves to grab the current asteroid (the one that came closest) of the day, and return it in a PagePackage
     pub async fn get_main_page(&mut self) -> Result<PagePackage, AppError>{
+
         //get todays date
         let today = Local::today().naive_utc().to_string();
 

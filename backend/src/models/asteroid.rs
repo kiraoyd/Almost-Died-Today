@@ -98,8 +98,11 @@ pub struct CloseApproachData {
 ///Contains values for relative velocity in three different units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RelativeVelocity {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub kilometers_per_second: FloatNum,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub kilometers_per_hour: FloatNum,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub miles_per_hour: FloatNum,
 }
 
