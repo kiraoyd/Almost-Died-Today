@@ -14,6 +14,8 @@ services:
       - POSTGRES_PASSWORD=asteroid
       - POSTGRES_DB=asteroid
 
+
+
 volumes:
   db:
     driver: local
