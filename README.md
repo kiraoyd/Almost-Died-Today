@@ -21,14 +21,22 @@ From the linux command line, at the root directory of the project:
 
 ```cp .env.example .env```  to create a .env file locally (will update this once we move to Docker)
 
+```sqlx database drop``` to refresh the database.
+
+```sqlx database create``` to start the database.
+
+```sqlx migrate run --ignore-missing``` run the migrations.
+
+```sqlx migrate run --source ./tests/fixtures --ignore-missing``` seed the tables.
 
 ```cargo run``` to start the server listening.
 
-```cd ..```
-```cd client```
+Navigate to: ```localhost:3000/```
 
-```cargo run``` to run the client side requests to test against the backend.
+When prompted, sign in using:
 
-Once the frontend is finished, these instructions will change.
+Username: me@gmail.com
+Password: banana
 
+You should now see basic HTML reporting which(if any) asteroid almost killed us all.
 

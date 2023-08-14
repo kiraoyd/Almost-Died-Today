@@ -10,14 +10,21 @@
 </head>
 <body>
 <!--Everything you see on a website-->
-<h1> Asteroid that almost killed us</h1>
+<h1> This asteroid almost ruined life for absolutely everyone: </h1>
 <!--Just splash in the rust whenever you need it-->
 <!--Goes through the page_package vector and returns a package of things-->
 <!--If you want to write CSS, match it to any class tag in a div, h2, etc to apply styles-->
 <div class="package">
-    <h2> Near miss: {{package.asteroid.name}} </h2>
-    <p>How many miles did it miss earth by? {{pacakge.asteroid.miss_distance_miles}} </p>
-<!--    etc etc...-->
+    {% if page_package.has_data %}
+    <h2> {{page_package.message}} </h2>
+    <p>Here is the jerk that almost collided with earth: {{page_package.asteroid.name}} </p>
+    <p> It was roughly {{page_package.asteroid.diameter_miles_max}} miles wide.</p>
+    <p> It only missed us by: {{page_package.asteroid.miss_distance_miles}} miles!!! (Are your palms SO sweaty?)</p>
+    <p> If it had smacked into earth, it would have done so at a whopping {{page_package.asteroid.relative_velocity_mph}} miles per hour.</p>
+    <p> Will it come around again? Well NASA seems to think so, since it's orbiting {{page_package.asteroid.orbiting_body}}. Good times.</p>
+    {% else %}
+    <h2> Ha, you lucky duck there were no near misses in the past week! All that existential anxiety for nothing eh?</h2>
+    {% endif %}
 </div>
 
 </body>

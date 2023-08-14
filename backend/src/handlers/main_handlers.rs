@@ -36,19 +36,18 @@ pub async fn root(
 
     //The context is where we can add in dynamic data values to our html
     let mut context = Context::new();
-
+    //TODO I only want to do this periodically, not every page load....
+    //grab the nasa data
+    let added = am_database.post_current_from_nasa_api().await?;
     //set up what we want to render with, all contexts go here now and will be available to the specified .html files
     let template_name = if let Some(claims_data) = claims {
         //user is logged in and we have the claims to prove it
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
 
-        //grab the nasa data
-        let added = am_database.post_current_from_nasa_api().await?;
-
-        //TODO make the get_all_asteroid_pages function in db.rs
         let page_package = am_database.get_main_page().await?;
-        context.insert("page_packages", &page_package);
+        println!("Got the page package: {}", page_package);
+        context.insert("page_package", &page_package);
         "pages.html" //route to logged in template when logged in
     } else {
         //user is NOT logged in
@@ -56,6 +55,8 @@ pub async fn root(
         context.insert("is_logged_in", &false);
         "index.html" //route to original template when not logged in
     };
+
+    //TODO panicking here!!!
     //Along with that context and template, Tera will render everything
     let rendered = TEMPLATES
         .render(template_name, &context) //render takes all the context attached in template_name and inserts it
@@ -93,7 +94,7 @@ pub async fn get_closest(
 ) -> Result<Json<Asteroid>, AppError> {
     let date = query.to_owned();
     let closest = am_database.get_closest_by_date(date).await?;
-    Ok(Json(closest))
+    Ok(Json(closest.unwrap()))
 }
 
 

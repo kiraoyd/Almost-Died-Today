@@ -174,6 +174,24 @@ Ok everything is working with the html templates, I just can't get my css to ren
 The big thing: Fix that route to grab an asteroid! What do we do if there is NO asteroid for today? 
 I need to handle that otherwise things breaaaak.
 
+8/14/2023
+Aha! It was just an issue with the format string I gave parse_from_str for a datetime.
+A big duh moment, it needs to include the hours and minutes! 
+Also I needed to change the format string to match the month based on characters: "%Y-%b-%d %H:%M"
+Thanks chatGPT.
+
+So now I need to chase down the reason why pages.html won't render.
+I am pretty sure it's because IF there is no asteroid matching todays exact date in the DB, there ends up being no context to render for the page
+So I need to account for this in ,y db.rs functions.
+
+You know what? YOU KNOW WHAT?! I just spent an hour chasing down why Tera was not recognizing my Rust if statement, and what it turned out to be was I had a tiny tiny typo in what I named my context.
+So the context I was calling in the template was off by one character. Arrrrg.
+But on the bright side, it now renders!
+
+Next up: where should I put the call to gather nasa data and post it to my database? I don't want it to happ
+
+
+
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
 
 1.First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"

@@ -93,10 +93,9 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     dotenv().ok();
     //get the API key from .env
     let api_key = std::env::var("NASA_API_KEY").unwrap();
-    //pull up to a years worth of data before the requested date
+    //pull up to a weeks worth of data before the requested date
     let start_date = date - ChronoDuration::days(7);
 
-    println!("{},{}", start_date, date);
     let client = Client::new();
 
     println!("Getting from NASA...");
@@ -104,14 +103,12 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     let response = client.get(request).send().await?;
 
     let body = response.text().await?;
-    println!("Body, {}", body);
     //let all_asteroids = response.text().await?; //turn the JSON into a string
 
 
     //This serde magic will take the all_asteroids json and turn it into an ApiResponse struct
     //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
     //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
-    //TODO serde is having a hard time deserializing, because my Asteroid struct expects Option<i32>s?
     let parsed_asteroids: NasaData = serde_json::from_str(&body)?; //deserialize JSON into an Asteroid struct
     let data = parsed_asteroids.near_earth_objects.clone(); //grab just the HashMap<String, Vec<Asteroid>> from ApiResponse
 
