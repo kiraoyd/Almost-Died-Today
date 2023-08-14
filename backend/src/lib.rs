@@ -52,6 +52,7 @@ pub async fn run_backend() {
     //this will do all the things, attach to the db, insert cors, set up the router
     let app = routes::main_routes::app(new_pool().await).await;
 
+    //TODO stick NASA here somewhere
     info!("Listening...");
 
     //bind the server to the socket address

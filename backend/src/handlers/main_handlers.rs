@@ -38,7 +38,7 @@ pub async fn root(
     let mut context = Context::new();
     //TODO I only want to do this periodically, not every page load....
     //grab the nasa data
-    let added = am_database.post_current_from_nasa_api().await?;
+    //TODO let added = am_database.post_current_from_nasa_api().await?;
     //set up what we want to render with, all contexts go here now and will be available to the specified .html files
     let template_name = if let Some(claims_data) = claims {
         //user is logged in and we have the claims to prove it
