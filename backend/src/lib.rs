@@ -2,38 +2,36 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-use reqwest::Client;
-use chrono::{Duration as ChronoDuration, NaiveDate};
+use crate::routes::main_routes;
 use axum::body::{boxed, BoxBody};
 use axum::extract::Path;
 use axum::response::Response;
+use chrono::{Duration as ChronoDuration, NaiveDate};
 use derive_more::Display;
 use dotenvy::dotenv;
 use http::{Request, StatusCode, Uri};
 use hyper::Body;
+use models::asteroid::{NasaData, NearEarthObject};
+use reqwest::Client;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use tower_http::services::ServeDir;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use models::asteroid::{NasaData, NearEarthObject};
-use serde_json::{json, Value};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use crate::routes::main_routes;
 
-
-use std::collections::HashMap;
 use reqwest::Response as ReqResponse;
+use std::collections::HashMap;
 
 //we will let our Store struct handle creation of a new pool
 use crate::db::new_pool;
 use crate::db::Store;
 use crate::error::AppError;
 use crate::handlers::main_handlers::post_current_nasa;
-
 
 //Don't forget to make all your files accessible to the crate root HERE
 pub mod db;
@@ -47,7 +45,6 @@ pub mod template;
 use crate::routes::main_routes::app;
 
 pub async fn run_backend() {
-
     dotenv().ok();
     init_logging();
 
@@ -57,12 +54,12 @@ pub async fn run_backend() {
     let mut pool = new_pool().await;
 
     /*
-    let db = Store::with_pool(pool);
-    //grab the nasa data
-    let added = post_current_nasa(db).await;
-    //println!("We just posted this data: {}", added);
+       let db = Store::with_pool(pool);
+       //grab the nasa data
+       let added = post_current_nasa(db).await;
+       //println!("We just posted this data: {}", added);
 
- */
+    */
 
     //this will do all the things, attach to the db, insert cors, set up the router
     let app = routes::main_routes::app(pool).await;
@@ -104,7 +101,6 @@ fn init_logging() {
         .init();
 }
 
-
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
 /// Makes a request, using reqwest, to NASA's NeoW's APIT using the api key listed in our .env
 /// The API only allows for up to 7 days worth of data to be pulled
@@ -118,7 +114,10 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     let client = Client::new();
 
     println!("Getting from NASA...");
-    let request = format!("https://api.nasa.gov/neo/rest/v1/feed?start_date={}&end_date={}&api_key={}", start_date, date, api_key);
+    let request = format!(
+        "https://api.nasa.gov/neo/rest/v1/feed?start_date={}&end_date={}&api_key={}",
+        start_date, date, api_key
+    );
     let response = client.get(request).send().await?;
 
     let body = response.text().await?;
@@ -134,7 +133,7 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     let mut every_asteroid: Vec<NearEarthObject> = Vec::new();
 
     //data is a hashmap where each string key is a date, and each associated value is a Vec<Asteroid>
-    for (date,asteroid) in data.iter() {
+    for (date, asteroid) in data.iter() {
         every_asteroid.extend(asteroid.clone())
     }
     Ok(every_asteroid)
@@ -188,9 +187,10 @@ pub type AppResult<T> = Result<T, AppError>;
 /// Basic macro to create a newtype for a database ID.
 //Macros cannot manipulate strings when they come from the tokens themselves
 //Credit: Casey Bailey
-#[macro_export]  //we need to do this since this lives in a module and it needs to export to the top level
+#[macro_export] //we need to do this since this lives in a module and it needs to export to the top level
 macro_rules! make_db_id {
-    ($name:ident) => { //the argument we pass to the macro will replace $name, 'ident' tells rust that whatever we are passing in happens to be an identifier (identifying a particular struct)
+    ($name:ident) => {
+        //the argument we pass to the macro will replace $name, 'ident' tells rust that whatever we are passing in happens to be an identifier (identifying a particular struct)
         paste::paste! { //paste is a crate that takes the stuff inside [<>] and pastes it together (concatenates strings)
             #[derive(
                 Clone,

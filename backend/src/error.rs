@@ -20,7 +20,6 @@ pub enum AppError {
 
     #[allow(dead_code)]
     Any(anyhow::Error),
-
 }
 
 ///A specific type of error, related directly to a Date requested but not found in the DB
@@ -96,4 +95,3 @@ impl From<serde_json::Error> for AppError {
         AppError::SerdeJson(value)
     }
 }
-

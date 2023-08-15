@@ -20,15 +20,14 @@ body {
 
 /* Style the left container */
 .left-container {
-    flex: 1; /* Take up available space */
+    flex: 1; /* Take up 1/2 of the available space */
     padding: 5px 20px;
 }
 
-/* Style the right container */
+
 .right-container {
-    flex: 1; /* Take up available space */
-    padding: 20px;
-    /*text-align: right; !* Align text to the right within the container *!*/
+    flex: 1; /* Take up 1/2 of the available space */
+    padding: 20px; /* Adjust padding as needed */
 }
 
 /* Add a media query for narrow screens */
@@ -42,8 +41,9 @@ body {
     }
 }
 
-
 /* Style the search input container */
+
+
 #search-bar {
     width: 50%; /* Set the width to 50% of the left container */
     max-width: 100%;
@@ -84,6 +84,7 @@ p {
 }
 
 .image-container {
+    /*background-color: rgba(211, 211, 211, 0.2); !* Adjust the color and opacity as needed *!*/
     padding: 10px; /* Add some padding around the image */
     display: inline-block; /* Allow the container to wrap around the image */
     border-radius: 5px; /* Add rounded corners to the container */
@@ -92,6 +93,7 @@ p {
 .nope {
     font-size: 50px;
     text-align: center;
+
 }
 
 .search_header {
@@ -123,5 +125,18 @@ input[type="submit"]:hover {
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.5); /* Increase shadow on hover */
 }
 
-
-
+/* Style for the home button */
+.home-button {
+    background-color: rgba(128, 10, 128, 0.8); !important;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Add a smooth transition effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Add a subtle shadow effect */
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 10px; /* Optional margin for spacing */
+}

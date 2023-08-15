@@ -1,0 +1,60 @@
+<!-- template for page user sees if logged in -->
+
+<!DOCTYPE html>
+<html lang="en">
+<!--links to CSS and JS if we had them, go in the header-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width-device-width, initial-scale-1.0">
+    <title>Almost Died Today - Search Results</title>
+    <link rel="stylesheet" href="/static/search_styles.css">
+</head>
+<body>
+
+<!--Everything you see on a website-->
+<div class="container-wrapper">
+<div class="left-container">
+    <form action="/search" method="get">
+        <div class="input-container" id="search-bar">
+            <p class="search_header"> Want to search again? </p>
+            <label class="input-label" for ="search_field">Enter the date you wish to search for (yyyy-mm-dd): </label>
+            <input type="text" id="search_field" name="search_date">
+            <input type="submit" value="search">
+        </div>
+    </form>
+
+    <a href="/" ><button class="home-button">Go to Home Page</button></a>
+
+</div>
+<!--Just splash in the rust whenever you need it-->
+<!--Goes through the page_package vector and returns a package of things-->
+<!--If you want to write CSS, match it to any class tag in a div, h2, etc to apply styles-->
+<div class="right-container">
+    {% if found_asteroid.has_data %}
+    <h2> Another (almost) hit! {{found_asteroid.message}} </h2>
+    <h2>Here is the jerk that almost collided with earth:  </h2>
+    <div class="image-container">
+        <img src="../static/angry.png" alt="SmallAsteroid Image">
+    </div>
+    <h2>NASA gave it this super cool space name:{{found_asteroid.asteroid.name}}  </h2>
+    {% if found_asteroid.asteroid.diameter_miles_max %}
+    <p> It was roughly {{found_asteroid.asteroid.diameter_miles_max}} miles wide.</p>
+    {% endif %}
+    {% if found_asteroid.asteroid.miss_distance_miles %}
+    <p> It only missed anhilating earth by {{found_asteroid.asteroid.miss_distance_miles}} miles!! (Are your palms SO sweaty?)</p>
+    {% endif %}
+    {% if found_asteroid.asteroid.relative_velocity_mph %}
+    <p> If it had smacked into earth it would have done so at a whopping {{found_asteroid.asteroid.relative_velocity_mph}} miles per hour. Good times.</p>
+    {% endif %}
+    {% if found_asteroid.asteroid.orbiting_body %}
+    <p> Will it come around again? Well NASA seems to think so, seeing as its orbiting {{found_asteroid.asteroid.orbiting_body}} and all. </p>
+    {% endif %}
+    {% else %}
+    <h2 class="nope"> Whoops. we couldn't find any near misses for the date you selected. Guess that was a particularly good day for earth.</h2>
+    {% endif %}
+</div>
+</div>
+
+</body>
+
+</html>

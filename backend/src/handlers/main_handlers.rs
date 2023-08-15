@@ -1,7 +1,7 @@
 use argon2::Config; //for hashing the password
 use axum::extract::{Path, Query, State};
 use axum::response::{Html, Response};
-use axum::{Form,Json};
+use axum::{Form, Json};
 //HWT token stuff
 use http::header::{LOCATION, SET_COOKIE};
 use http::{HeaderValue, StatusCode};
@@ -23,14 +23,12 @@ use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 //we need the templates crate at some point
 use crate::template::TEMPLATES;
 
-
 #[allow(dead_code)]
 ///loads context to the main landing page, differing depending on if a user is logged on (has a JWT token stored as a browser cooke) or not
 pub async fn root(
     State(mut am_database): State<Store>, //has to be mutable to let db.rs call one of it's own function inside another of its functions
     OptionalClaims(claims): OptionalClaims,
 ) -> Result<Html<String>, AppError> {
-
     //use Tera to load everything from our templates.rs file, into a Hashmap of templates
     //Then we tell this route which one we want to render, and provide it the context
     //Any context we establish here, we will be able to pull into the related html page
@@ -66,6 +64,45 @@ pub async fn root(
     Ok(Html(rendered)) //Then we send the html back
 }
 
+///Retreives asteroid that passed closest to earth on the date (a String) provided by the html Form, returns the found Asteroid (which will either be None or Asteroid)
+pub async fn search_from_form(
+    State(mut am_database): State<Store>,
+    Form(search_date): Form<UserSearch>, //search_date comes in from the frontend, is the info typed into the search form input field
+) -> Result<Html<String>, AppError> {
+    //make a SearchResult in preparation to be sent back
+    let mut result = SearchResult {
+        asteroid: None,
+        message: "No asteroid found to match that date requested.".to_string(),
+        has_data: false,
+    };
+
+    let date = search_date.search_date.clone();
+
+    let found_asteroid = am_database.get_closest_by_date(date).await?;
+    if let Some(asteroid) = found_asteroid {
+        //then we have data
+        result.asteroid = Some(asteroid);
+        result.message = format!("Looky here, we all got lucky on {} too!", search_date.search_date).to_string();
+        result.has_data = true;
+    }
+
+    //The context is where we can add in dynamic data values to our html
+    let mut context = Context::new();
+
+    //insert the search result as the context
+    let template_name = {
+        context.insert("found_asteroid", &result);
+        "search_result.html" //route to logged in template when logged in
+    };
+    //Render search_result.html with all the context
+    let rendered = TEMPLATES
+        .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+        .unwrap_or_else(|err| {
+            error!("Template rendering error: {}", err);
+            panic!()
+        });
+    Ok(Html(rendered)) //Then we send the html back
+}
 
 //Build functions here as we make new CRUD stuff in db.rs
 //all handlers call some function from db.store
@@ -79,7 +116,6 @@ pub async fn get_asteroids(
     Ok(Json(asteroids))
 }
 
-
 ///Queries NASA's NeoW API for 7 days (the limit) worth of data, then posts that data to our database
 pub async fn post_current_nasa(
     State(mut am_database): State<Store>,
@@ -88,7 +124,6 @@ pub async fn post_current_nasa(
 
     Ok(Json(posted))
 }
-
 
 ///Retrieves the asteroid that passed closest to earth on the date given in the query params
 pub async fn get_closest(
@@ -100,42 +135,16 @@ pub async fn get_closest(
     Ok(Json(closest.unwrap()))
 }
 
-///Retreives asteroid that passed closest to earth on the date (a String) provided by the html Form, returns the found Asteroid (which will either be None or Asteroid)
-pub async fn search_from_form(
-    State(mut am_database): State<Store>,
-    Form(search_date):Form<UserSearch>, //search_date comes in from the frontend, is the info typed into the search form input field
-) -> Result<Json<SearchResult>, AppError>{
-    //make a SearchResult in preparation to be sent back
-    let mut result = SearchResult {
-        asteroid: None,
-        message: "No asteroid found to match that date requested.".to_string(),
-    };
-
-    let date = search_date.search_date.clone();
-
-    let found_asteroid = am_database.get_closest_by_date(date).await?;
-    if let Some(asteroid) = found_asteroid {
-        //then we have data
-        result.asteroid = Some(asteroid);
-        result.message = "Looky here, you got luck on this day too!".to_string();
-    }
-
-    Ok(Json(result))
-
-}
-
-
 //Handlers below handle functionality related to login/users
 //In a real production site, we would use 3rd party Authorizaton instead of implementing our own
 //Credit: Casey Bailey 2023
 ///Accepts user Credentials in a UserSignup struct, checks all credentials exist and are valid, checks that requested user email for signup is not already
 /// present in the database. If everything this valid, hashes the password using argon2, resets the password feild in credentials, add thes new user to the
 /// database and returns the users information for confirmation
-pub async fn register (
+pub async fn register(
     State(mut database): State<Store>,
-    Form(mut credentials):Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
+    Form(mut credentials): Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
 ) -> Result<Json<Value>, AppError> {
-
     //missing feilds
     if credentials.email.is_empty() || credentials.password.is_empty() {
         return Err(AppError::MissingCredentials);
@@ -175,9 +184,9 @@ pub async fn register (
 ///Verifies the credentials given by a user trying to login, if valid,make a JWT token and store it as a browser cookie
 pub async fn login(
     State(mut database): State<Store>,
-    Form(creds):Form<User>, //The credentials will be sent back on submit of the html form
+    Form(creds): Form<User>, //The credentials will be sent back on submit of the html form
 ) -> Result<Response<Body>, AppError> {
-    if creds.email.is_empty() || creds.password.is_empty(){
+    if creds.email.is_empty() || creds.password.is_empty() {
         return Err(AppError::MissingCredentials);
     }
 
@@ -185,12 +194,12 @@ pub async fn login(
 
     //use argon2 to reverse hash and verify the given password
     let is_password_correct =
-    match argon2::verify_encoded(&*existing_user.password, creds.password.as_bytes()) {
-        Ok(result) => result,
-        Err(_) => {
-            return Err(AppError::InternalServerError);
-        }
-    };
+        match argon2::verify_encoded(&*existing_user.password, creds.password.as_bytes()) {
+            Ok(result) => result,
+            Err(_) => {
+                return Err(AppError::InternalServerError);
+            }
+        };
 
     if !is_password_correct {
         return Err(AppError::InvalidPassword);
@@ -199,7 +208,7 @@ pub async fn login(
     //Now we have validated the users creds, lets make claims piece of the token
     let claims = Claims {
         id: 0,
-        email:creds.email.to_owned(),
+        email: creds.email.to_owned(),
         exp: get_timestamp_after_8_hours(),
     };
 
@@ -228,10 +237,10 @@ pub async fn login(
     Ok(response)
 }
 
-
 ///Silly welcome message to test we did claims right
-pub async fn protected(claims:Claims) -> Result<String, AppError> {
+pub async fn protected(claims: Claims) -> Result<String, AppError> {
     Ok(format!(
-        "Welcome to the PROTECTED area: \n Your claim data is: {}", claims
+        "Welcome to the PROTECTED area: \n Your claim data is: {}",
+        claims
     ))
 }

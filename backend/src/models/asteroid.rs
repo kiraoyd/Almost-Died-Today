@@ -3,9 +3,9 @@ use chrono::{NaiveDate, NaiveDateTime};
 use derive_more::Display;
 use serde_derive::{Deserialize, Serialize};
 
-use std::str::FromStr;
-use std::num::{ParseIntError, ParseFloatError};
 use serde_aux::prelude::*;
+use std::num::{ParseFloatError, ParseIntError};
+use std::str::FromStr;
 
 use std::collections::HashMap;
 //See the NASAAPI for JSON format of the NeoW's response
@@ -19,18 +19,17 @@ pub struct FloatNum(pub Option<f64>);
 //needed to use the serde_aux crate to convert strings to numbers
 impl FromStr for FloatNum {
     type Err = ParseFloatError;
-    fn from_str(s: &str) -> Result<FloatNum, Self::Err>{
+    fn from_str(s: &str) -> Result<FloatNum, Self::Err> {
         Ok(FloatNum(Some(f64::from_str(s)?)))
     }
 }
 //needed to use the serde_aux crate to convert strings to numbers
 impl FromStr for AsteroidId {
     type Err = ParseIntError;
-    fn from_str(s: &str) -> Result<AsteroidId, Self::Err>{
+    fn from_str(s: &str) -> Result<AsteroidId, Self::Err> {
         Ok(AsteroidId(i32::from_str(s)?))
     }
 }
-
 
 ///Holds the response from NASA's NeoW's API
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -56,7 +55,7 @@ pub struct NearEarthObject {
     pub id: Option<String>,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub neo_reference_id: FloatNum,
-    pub name: Option <String>,
+    pub name: Option<String>,
     pub nasa_jpl_url: Option<String>,
     pub absolute_magnitude_h: Option<f64>,
     pub estimated_diameter: EstimatedDiameter,
@@ -70,11 +69,10 @@ pub struct NearEarthObject {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EstimatedDiameter {
     pub kilometers: Diameter,
-    pub  meters: Diameter,
+    pub meters: Diameter,
     pub miles: Diameter,
     pub feet: Diameter,
 }
-
 
 ///Contains the min and max values for some unit of measurements diameter values
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -94,7 +92,6 @@ pub struct CloseApproachData {
     pub orbiting_body: Option<String>,
 }
 
-
 ///Contains values for relative velocity in three different units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RelativeVelocity {
@@ -105,7 +102,6 @@ pub struct RelativeVelocity {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub miles_per_hour: FloatNum,
 }
-
 
 ///Contains values for miss distance in four units of measurement
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -119,7 +115,6 @@ pub struct MissDistance {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub miles: FloatNum,
 }
-
 
 ///Struct for modeling the NASA data to the AlmostDiedToday database (only contains the info from NasaData that we actually need)
 #[derive(Clone, Debug, Display, Serialize, Deserialize, sqlx::FromRow)]
@@ -151,7 +146,6 @@ pub struct Asteroid {
     pub orbiting_body: Option<String>,
 }
 
-
 ///Contains the specific diameter info for a particular asteroid
 #[derive(Clone, Debug, Display, Serialize, Deserialize, sqlx::FromRow)]
 #[display(
@@ -176,17 +170,15 @@ pub struct DiameterInfo {
     pub diameter_feet_max: Option<f64>,
 }
 
-
-
-///Package for sending an Asteroid Search result back to the users page
+///Package for sending an Asteroid Search result back to the users page, this is exactly like a PagePackage struct right now, but may be adapted later to be different
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SearchResult {
     pub asteroid: Option<Asteroid>,
     pub message: String,
+    pub has_data: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserSearch {
     pub search_date: String,
 }
-

@@ -21,7 +21,6 @@ pub struct User {
     pub password: String,
 }
 
-
 ///Contains information for a user trying to sign up, includes the confirm_password information
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct UserSignup {
@@ -35,7 +34,6 @@ pub struct LoggedInUser {
     pub token: Claims,
 }
 
-
 ///Claims information for a user, the ID ref to the user table, the email for that user, and when their logged in status expires
 #[derive(Serialize, Deserialize, derive_more::Display)]
 #[display(fmt = "id: {}, email: {}, exp: {}", id, email, exp)]
@@ -47,8 +45,8 @@ pub struct Claims {
 
 #[async_trait]
 impl<S> FromRequestParts<S> for Claims
-    where
-        S: Send + Sync,
+where
+    S: Send + Sync,
 {
     type Rejection = AppError;
 
@@ -80,8 +78,8 @@ pub struct OptionalClaims(pub Option<Claims>);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for OptionalClaims
-    where
-        S: Send + Sync,
+where
+    S: Send + Sync,
 {
     type Rejection = Infallible; // Use Infallible since we're not rejecting the request
 
@@ -127,7 +125,6 @@ impl Keys {
         }
     }
 }
-
 
 ///Define the static variable KEYS
 pub static KEYS: Lazy<Keys> = Lazy::new(|| {

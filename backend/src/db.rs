@@ -1,20 +1,20 @@
 use axum::Json;
-use chrono::{Duration, NaiveDate, NaiveDateTime, Local};
+use chrono::{Duration, Local, NaiveDate, NaiveDateTime};
 use futures::TryStreamExt;
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool,Row};
+use sqlx::{PgPool, Row};
 use std::sync::{Arc, Mutex, RwLock};
 use tracing::info;
 
 //add use crate statements for the structs we will write eventually
 use crate::error::AppError;
-use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum, AsteroidId};
+use crate::models::asteroid::{Asteroid, AsteroidId, DiameterInfo, FloatNum, NearEarthObject};
 use crate::models::user::{User, UserSignup};
 use crate::pull_nasa_api_data;
 
 //templating stuff
-use crate::models::page::{PagePackage};
+use crate::models::page::PagePackage;
 
 ///Holds the various types of databases/storage, could contain a postgres DB, a Vec of structs, etc.
 #[derive(Clone)]
@@ -41,21 +41,21 @@ impl Store {
     }
 
     ///grabs one user from the users table based on the specified email address
-    pub async fn get_user(&self, email: &str) -> Result<User, AppError>{
+    pub async fn get_user(&self, email: &str) -> Result<User, AppError> {
         let user = sqlx::query_as::<_, User>(
             r#"
             SELECT email, password FROM users WHERE email = $1
             "#,
         )
-            .bind(email)
-            .fetch_one(&self.conn_pool)
-            .await?;
+        .bind(email)
+        .fetch_one(&self.conn_pool)
+        .await?;
 
         Ok(user)
     }
 
     ///Adds one user to the users table based off their supplied email and password in the UserSignup struct
-    pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError>{
+    pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError> {
         //TODO should encrypt passswords using bcrypt
         let result = sqlx::query("INSERT INTO users(email, password) VALUES ($1, $2)")
             .bind(&user.email)
@@ -71,7 +71,6 @@ impl Store {
                 serde_json::json!({"message": "User created successfully!"}),
             ))
         }
-
     }
 
     ///Retrieves all asteroids in the asteroid table, returns the data in a Vec of Asteroid structs
@@ -113,8 +112,7 @@ impl Store {
 
     ///Posts Vec of Asteroids to our database, after grabbing the data from NASA's NeoW's API
     pub async fn post_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
-
-        let today: NaiveDate = Local::now().naive_utc().into();  //now() returns a datetime
+        let today: NaiveDate = Local::now().naive_utc().into(); //now() returns a datetime
 
         //Query NASA's API for todays date, plus 7 days prior
         let asteroids = pull_nasa_api_data(today).await?;
@@ -126,44 +124,67 @@ impl Store {
         //go through each asteroid we got from NASA (that's in the Vec<NearEarthObjects>) and parse into the correct formats to be posted to the database
         for asteroid in asteroids {
             //convert from string to NaiveDate
-            let date = asteroid.close_approach_data[0].close_approach_date.clone().unwrap();
+            let date = asteroid.close_approach_data[0]
+                .close_approach_date
+                .clone()
+                .unwrap();
             let parsed_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d");
             //match, if we got a datet back, set approach_date to it, otherwise set a default date
             let approach_date: NaiveDate = match parsed_date {
                 Ok(date) => date,
                 Err(err) => {
                     println!("Error matching dates: {}", err);
-                    NaiveDate::from_ymd_opt(2000,1,1).unwrap() //default TODO
+                    NaiveDate::from_ymd_opt(2000, 1, 1).unwrap() //default TODO
                 }
             };
 
             //convert from string to NaiveDateTime
-            let datetime = asteroid.close_approach_data[0].close_approach_date_full.clone().unwrap();
+            let datetime = asteroid.close_approach_data[0]
+                .close_approach_date_full
+                .clone()
+                .unwrap();
             let parsed_datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%b-%d %H:%M"); //converts string to NaiveDateTime, retunrs Result<NDT, err>
-            //match, if we got a datetime back, set approach_datetime to it, otherwise set a default date
+                                                                                              //match, if we got a datetime back, set approach_datetime to it, otherwise set a default date
             let approach_datetime: NaiveDateTime = match parsed_datetime {
                 Ok(datetime) => datetime,
                 Err(err) => {
                     println!("Error matching datetimes: {}", err);
-                    NaiveDateTime::from_timestamp_opt(0,0).unwrap() //use default if we error
+                    NaiveDateTime::from_timestamp_opt(0, 0).unwrap() //use default if we error
                 }
             };
 
             //these variable make the query easier to read
             let name = asteroid.name.unwrap();
-            let size_meters_min =asteroid.estimated_diameter.meters.estimated_diameter_min;
-            let size_meters_max =asteroid.estimated_diameter.meters.estimated_diameter_max;
-            let size_kmeters_min = asteroid.estimated_diameter.kilometers.estimated_diameter_min;
-            let size_kmeters_max = asteroid.estimated_diameter.kilometers.estimated_diameter_max;
+            let size_meters_min = asteroid.estimated_diameter.meters.estimated_diameter_min;
+            let size_meters_max = asteroid.estimated_diameter.meters.estimated_diameter_max;
+            let size_kmeters_min = asteroid
+                .estimated_diameter
+                .kilometers
+                .estimated_diameter_min;
+            let size_kmeters_max = asteroid
+                .estimated_diameter
+                .kilometers
+                .estimated_diameter_max;
             let size_miles_max = asteroid.estimated_diameter.miles.estimated_diameter_min;
             let size_miles_min = asteroid.estimated_diameter.miles.estimated_diameter_min;
             let size_feet_min = asteroid.estimated_diameter.feet.estimated_diameter_min;
             let size_feet_max = asteroid.estimated_diameter.feet.estimated_diameter_max;
             let hazardous = asteroid.is_potentially_hazardous_asteroid;
             //Remember, a FloatNum is a tuple struct, you can access the f64 inside with floatnumvar.0
-            let velocity_mph = asteroid.close_approach_data[0].relative_velocity.miles_per_hour.0.unwrap();
-            let miss_distance_miles = asteroid.close_approach_data[0].miss_distance.miles.0.unwrap();
-            let orbiting_body = asteroid.close_approach_data[0].orbiting_body.clone().unwrap();
+            let velocity_mph = asteroid.close_approach_data[0]
+                .relative_velocity
+                .miles_per_hour
+                .0
+                .unwrap();
+            let miss_distance_miles = asteroid.close_approach_data[0]
+                .miss_distance
+                .miles
+                .0
+                .unwrap();
+            let orbiting_body = asteroid.close_approach_data[0]
+                .orbiting_body
+                .clone()
+                .unwrap();
 
             //POST this asteroids data to the database
             let res = sqlx::query!(
@@ -209,7 +230,10 @@ impl Store {
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
     /// To be used in a search function on the site
-    pub async fn get_closest_by_date(&mut self, today: String) -> Result<Option<Asteroid>, AppError> {
+    pub async fn get_closest_by_date(
+        &mut self,
+        today: String,
+    ) -> Result<Option<Asteroid>, AppError> {
         let parse_from_str = NaiveDate::parse_from_str;
 
         let date = parse_from_str(today.as_str(), "%Y-%m-%d").unwrap();
@@ -221,7 +245,7 @@ impl Store {
         .await?; //discard error info
 
         //What if the query comes back empty?
-        if rows.is_empty(){
+        if rows.is_empty() {
             println!("Nothing there....");
             Ok(None)
         } else {
@@ -256,7 +280,8 @@ impl Store {
 
             //total_cmp sorts the Vec from decreasing to increasing order
             asteroids.sort_by(|a, b| {
-                a.miss_distance_miles.0 //Floatnum type
+                a.miss_distance_miles
+                    .0 //Floatnum type
                     .unwrap()
                     .total_cmp(&b.miss_distance_miles.0.unwrap()) //FloatNum type
             });
@@ -265,7 +290,8 @@ impl Store {
             let mut found = false;
             let mut closest_call = asteroids[index].clone();
             while index < asteroids.len() && !found {
-                match asteroids[index].miss_distance_miles.0 { //FloatNum type
+                match asteroids[index].miss_distance_miles.0 {
+                    //FloatNum type
                     Some(x) => {
                         found = true;
                         closest_call = asteroids[index].clone();
@@ -281,11 +307,9 @@ impl Store {
         }
     }
 
-
     ///This site only has one main page for now, future features will allow for a search function
     /// So this function serves to grab the current asteroid (the one that came closest) of the day, and return it in a PagePackage
-    pub async fn get_main_page(&mut self) -> Result<PagePackage, AppError>{
-
+    pub async fn get_main_page(&mut self) -> Result<PagePackage, AppError> {
         //get todays date
         let mut today = Local::now().naive_utc().date(); //now() returns datetime, .date() grabs just the date
 
@@ -315,7 +339,7 @@ impl Store {
         //set up the pagePackage accordingly
         match near_miss {
             Some(data) => {
-                let todays_message = format!("You almost died on: {}!", today).to_string();
+                let todays_message = format!("Everyone almost died on: {}!", today).to_string();
 
                 package.asteroid = Some(data);
                 package.message = todays_message;
@@ -328,7 +352,5 @@ impl Store {
             }
         }
         Ok(package)
-
     }
-
 }

@@ -6,7 +6,6 @@ use hyper::Body;
 use sqlx::PgPool;
 use tracing::info;
 
-
 use crate::db::Store;
 use crate::{file_handler, handlers, layers};
 
@@ -30,7 +29,7 @@ pub async fn app(pool: PgPool) -> Router {
 
     Router::new()
         .nest("/static", static_router)
-        .route("/", get(root))  //here is where we build ALL our html stuff too
+        .route("/", get(root)) //here is where we build ALL our html stuff too
         .route("/asteroids", get(main_handlers::get_asteroids))
         .route("/closest/:date", get(main_handlers::get_closest))
         .route("/current_asteroids", post(main_handlers::post_current_nasa))
