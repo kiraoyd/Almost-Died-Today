@@ -7,18 +7,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width-device-width, initial-scale-1.0">
     <title>Almost Died Today - Potentially Deadly Asteroids</title>
+    <link rel="stylesheet" href="/static/page_styles.css">
 </head>
 <body>
 <!--Everything you see on a website-->
-<h1> There's always an asteroid ready to ruin life for absolutely everyone: </h1>
+<h1> There's always an asteroid ready to ruin life for absolutely everyone. </h1>
 
 <!--Just splash in the rust whenever you need it-->
 <!--Goes through the page_package vector and returns a package of things-->
 <!--If you want to write CSS, match it to any class tag in a div, h2, etc to apply styles-->
 <div>
     {% if page_package.has_data %}
-    <h2> {{page_package.message}} </h2>
-    <h2>Here is the jerk that almost collided with earth: {{page_package.asteroid.name}} </h2>
+    <h2> Congradulations! {{page_package.message}} </h2>
+    <h2>Here is the jerk that almost collided with earth: {{page_package.asteroid.name}} <-- space name for a space jerk</h2>
+    <div class="image-container">
+        <img src="../static/angry.png" alt="SmallAsteroid Image">
+    </div>
     {% if page_package.asteroid.diameter_miles_max %}
     <p> It was roughly {{page_package.asteroid.diameter_miles_max}} miles wide.</p>
     {% endif %}

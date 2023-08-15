@@ -4,12 +4,18 @@
 
 use reqwest::Client;
 use chrono::{Duration as ChronoDuration, NaiveDate};
-
+use axum::body::{boxed, BoxBody};
+use axum::extract::Path;
+use axum::response::Response;
 use derive_more::Display;
 use dotenvy::dotenv;
+use http::{Request, StatusCode, Uri};
+use hyper::Body;
 use serde_derive::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use tower::ServiceExt;
+use tower_http::services::ServeDir;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -20,11 +26,13 @@ use crate::routes::main_routes;
 
 
 use std::collections::HashMap;
-use reqwest::Response;
+use reqwest::Response as ReqResponse;
 
 //we will let our Store struct handle creation of a new pool
 use crate::db::new_pool;
+use crate::db::Store;
 use crate::error::AppError;
+use crate::handlers::main_handlers::post_current_nasa;
 
 
 //Don't forget to make all your files accessible to the crate root HERE
@@ -36,9 +44,6 @@ pub mod models;
 pub mod routes;
 pub mod template;
 
-
-
-
 use crate::routes::main_routes::app;
 
 pub async fn run_backend() {
@@ -49,10 +54,19 @@ pub async fn run_backend() {
     //get the socket Addr, based off the .env info
     let addr = get_host_from_env();
 
-    //this will do all the things, attach to the db, insert cors, set up the router
-    let app = routes::main_routes::app(new_pool().await).await;
+    let mut pool = new_pool().await;
 
-    //TODO stick NASA here somewhere
+    /*
+    let db = Store::with_pool(pool);
+    //grab the nasa data
+    let added = post_current_nasa(db).await;
+    //println!("We just posted this data: {}", added);
+
+ */
+
+    //this will do all the things, attach to the db, insert cors, set up the router
+    let app = routes::main_routes::app(pool).await;
+
     info!("Listening...");
 
     //bind the server to the socket address
@@ -62,6 +76,7 @@ pub async fn run_backend() {
         .unwrap();
 }
 
+///Grabs the data from the .env to set up the databases socket address
 fn get_host_from_env() -> SocketAddr {
     let host = std::env::var("API_HOST").unwrap();
     let api_host = IpAddr::from_str(&host).unwrap();
@@ -73,6 +88,8 @@ fn get_host_from_env() -> SocketAddr {
     //return the socketAddr
     SocketAddr::from((api_host, api_port))
 }
+
+///Allows logging
 fn init_logging() {
     // https://github.com/tokio-rs/axum/blob/main/examples/tracing-aka-logging
     tracing_subscriber::registry()
@@ -89,6 +106,7 @@ fn init_logging() {
 
 
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route
+/// Makes a request, using reqwest, to NASA's NeoW's APIT using the api key listed in our .env
 /// The API only allows for up to 7 days worth of data to be pulled
 pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>, AppError> {
     dotenv().ok();
@@ -106,7 +124,6 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     let body = response.text().await?;
     //let all_asteroids = response.text().await?; //turn the JSON into a string
 
-
     //This serde magic will take the all_asteroids json and turn it into an ApiResponse struct
     //I really don't understand it, and had to get help from chatpGPT just to find out how to do it
     //But now we can directly get to our hashmap of just the date/Asteroid key/value pairs
@@ -123,6 +140,7 @@ pub async fn pull_nasa_api_data(date: NaiveDate) -> Result<Vec<NearEarthObject>,
     Ok(every_asteroid)
 }
 
+///Sends up backwards in time all risk of such actions thrown to the wind and blown straight into a swamp
 //Credit: Casey Bailey
 pub fn get_timestamp_after_8_hours() -> u64 {
     let now = SystemTime::now();
@@ -134,10 +152,42 @@ pub fn get_timestamp_after_8_hours() -> u64 {
     eight_hours_from_now.as_secs()
 }
 
+// https://benw.is/posts/serving-static-files-with-axum
+pub async fn get_static_file(uri: Uri) -> Result<Response<BoxBody>, (StatusCode, String)> {
+    let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
+
+    // `ServeDir` implements `tower::Service` so we can call it with `tower::ServiceExt::oneshot`
+    // When run normally, the root is the workspace root (backend for us if we're running from backend)
+    match ServeDir::new("./static").oneshot(req).await {
+        Ok(res) => Ok(res.map(boxed)),
+        Err(err) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {}", err),
+        )),
+    }
+}
+
+pub async fn file_handler(
+    Path(filename): Path<String>,
+) -> Result<Response<BoxBody>, (StatusCode, String)> {
+    let uri: Uri = format!("/{}", filename).parse().unwrap(); // Construct the URI from the filename
+    let res = get_static_file(uri.clone()).await?;
+
+    if res.status() == StatusCode::NOT_FOUND {
+        match format!("{}.html", uri).parse() {
+            Ok(uri_html) => get_static_file(uri_html).await,
+            Err(_) => Err((StatusCode::INTERNAL_SERVER_ERROR, "Invalid URI".to_string())),
+        }
+    } else {
+        Ok(res)
+    }
+}
+
 pub type AppResult<T> = Result<T, AppError>;
 
 /// Basic macro to create a newtype for a database ID.
 //Macros cannot manipulate strings when they come from the tokens themselves
+//Credit: Casey Bailey
 #[macro_export]  //we need to do this since this lives in a module and it needs to export to the top level
 macro_rules! make_db_id {
     ($name:ident) => { //the argument we pass to the macro will replace $name, 'ident' tells rust that whatever we are passing in happens to be an identifier (identifying a particular struct)

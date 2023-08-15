@@ -6,6 +6,8 @@ use tower::ServiceExt;
 use backend::models::asteroid::Asteroid;
 use backend::routes::main_routes::app;
 
+///Tests the get_asteroids route
+//Yay I wrote ONE whole test so far!
 #[sqlx::test(fixtures("0001_seed_as"))]
 async fn test_get_asteroids(db_pool: PgPool) {
     let app = app(db_pool).await;

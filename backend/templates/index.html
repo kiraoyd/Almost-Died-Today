@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width-device-width, initial-scale-1.0">
 <!--    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">-->
-    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="/static/styles.css">
     <title>Almost Died Today</title>
 </head>
 <body>
@@ -14,38 +14,56 @@
 <!--Show dashboard-->
 <h2>Dashboard</h2>
 <ul>
-<!--    The link here navigates around out own site-->
+<!--    The link here navigates around our own site-->
     <li><a href="/asteroids">See all current asteroid near misses this week</a></li>
 </ul>
 
 {% else %}
+<div class="container">
+    <h1>Almost Died Today</h1>
+    <p class="greeting"> The place to find out just how close you were to being wrecked, by space.</p>
 <!--show login form-->
+<div class="login-section">
 <h2> Login</h2>
 
 <!--action is the path it will take when someone hits submit, which endpoint does the form data go to?-->
 <!--But we can't send JSON, so we need to send Form(creds): Form<User> as the arg to our login function-->
 <form action="/login" method="post">
-    <label for ="email_login">Email: </label>
-    <input type="text" id="email_login" name="email">
+    <div class="input-container">
+        <label class="input-label" for ="email_login">Email: </label>
+        <input type="text" id="email_login" name="email">
+    </div>
+    <div class="input-container">
 <!--    Just a box we can type into-->
-    <label for="password_login">Password</label>
+    <label class="input-label" for="password_login">Password</label>
     <input type="password" id="password_login" name="password">
 <!--    When anyone clicks submit, it will runn the action on the form-->
+    </div>
     <input type="submit" value="login">
 </form>
+</div>
 
+<div class="signup-section">
 <h2> Sign Up</h2>
 
 <form action="/users" method="post">
-    <label for="email_register"> Email: </label>
+    <div class="input-container">
+    <label class="input-label" for="email_register"> Email: </label>
     <input type="text" id="email_register" name="email">
-    <label for="password_register">Password: </label>
+    </div>
+    <div class="input-container">
+    <label class="input-label" for="password_register">Password: </label>
     <input type="password" id="password_register" name="password">
-    <label for="password_register"> Confirm Password: </label>
+    </div>
+    <div class="input-container">
+    <label class="input-label" for="password_register"> Confirm Password: </label>
     <input type="password" id="confirm_password" name="confirm_password">
+    </div>
     <input type="submit" value="register">
 
 </form>
+</div>
+</div>
 {% endif %}
 </body>
 

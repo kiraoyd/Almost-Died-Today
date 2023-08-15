@@ -11,18 +11,18 @@ use tracing::info;
 use crate::error::AppError;
 use crate::models::asteroid::{NearEarthObject, Asteroid, DiameterInfo, FloatNum, AsteroidId};
 use crate::models::user::{User, UserSignup};
+use crate::pull_nasa_api_data;
 
 //templating stuff
 use crate::models::page::{PagePackage};
 
-use crate::pull_nasa_api_data; //imports from lib.rs
-
+///Holds the various types of databases/storage, could contain a postgres DB, a Vec of structs, etc.
 #[derive(Clone)]
 pub struct Store {
     pub conn_pool: PgPool,
 }
 
-//sets up a pool of connections to the DB URL specified in our .env
+///sets up a pool of connections to the DB URL specified in our .env
 pub async fn new_pool() -> PgPool {
     let db_url = std::env::var("DATABASE_URL").unwrap();
     PgPoolOptions::new()
@@ -32,14 +32,15 @@ pub async fn new_pool() -> PgPool {
         .unwrap()
 }
 
+//Implement all functionality to and from the DB here
 impl Store {
-    //set up a Store struct, that holds a pool already created and connected to some DB
-    //Allows us to swap out the databases based on which one was connected
+    ///set up a Store struct, that holds a pool already created and connected to some DB
+    ///Allows us to swap out the databases based on which one was connected
     pub fn with_pool(pool: PgPool) -> Self {
         Self { conn_pool: pool }
     }
 
-
+    ///grabs one user from the users table based on the specified email address
     pub async fn get_user(&self, email: &str) -> Result<User, AppError>{
         let user = sqlx::query_as::<_, User>(
             r#"
@@ -53,6 +54,7 @@ impl Store {
         Ok(user)
     }
 
+    ///Adds one user to the users table based off their supplied email and password in the UserSignup struct
     pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError>{
         //TODO should encrypt passswords using bcrypt
         let result = sqlx::query("INSERT INTO users(email, password) VALUES ($1, $2)")
@@ -72,13 +74,15 @@ impl Store {
 
     }
 
+    ///Retrieves all asteroids in the asteroid table, returns the data in a Vec of Asteroid structs
     pub async fn get_all_asteroids(&mut self) -> Result<Vec<Asteroid>, AppError> {
         let rows = sqlx::query!(r#" SELECT * FROM asteroids"#)
             .fetch_all(&self.conn_pool)
             .await?;
 
+        //For every row, collect each row after mapping it to an Asteroid struct, into a Vec
         let asteroids: Vec<_> = rows
-            .into_iter()
+            .into_iter() //to do this, rows needs to be turned into an iterator
             .map(|row| {
                 let size_info = DiameterInfo {
                     diameter_meters_min: row.diameter_meters_min,
@@ -107,23 +111,24 @@ impl Store {
         Ok(asteroids)
     }
 
-    ///Posts Vec of Asteroids to our database
+    ///Posts Vec of Asteroids to our database, after grabbing the data from NASA's NeoW's API
     pub async fn post_current_from_nasa_api(&mut self) -> Result<Vec<Asteroid>, AppError> {
 
-        // let today = chrono::offset::Utc::now();
-        // let naive_today = today.date().naive_utc();  //chatGPT
         let today: NaiveDate = Local::now().naive_utc().into();  //now() returns a datetime
-        let asteroids = pull_nasa_api_data(today).await?; //asteroids is a Vec<NearEarthObject>
+
+        //Query NASA's API for todays date, plus 7 days prior
+        let asteroids = pull_nasa_api_data(today).await?;
 
         //Now we have a Vec<NearEarthObjects>, inside asteroids, lets get the relevant data posted to the table
-        // Then lets parse the posted values to an Asteroid struct and send it to the database
-        let mut added_asteroids: Vec<Asteroid> = Vec::new(); //will add each posted Asteroid for the response
-        //go through each asteroid we got from NASA (that's in the Vec<NearEarthObjects>) and parse into the correct formats to be posted to the database
 
+        let mut added_asteroids: Vec<Asteroid> = Vec::new(); //will add each posted Asteroid for the response
+
+        //go through each asteroid we got from NASA (that's in the Vec<NearEarthObjects>) and parse into the correct formats to be posted to the database
         for asteroid in asteroids {
             //convert from string to NaiveDate
             let date = asteroid.close_approach_data[0].close_approach_date.clone().unwrap();
             let parsed_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d");
+            //match, if we got a datet back, set approach_date to it, otherwise set a default date
             let approach_date: NaiveDate = match parsed_date {
                 Ok(date) => date,
                 Err(err) => {
@@ -132,9 +137,9 @@ impl Store {
                 }
             };
 
+            //convert from string to NaiveDateTime
             let datetime = asteroid.close_approach_data[0].close_approach_date_full.clone().unwrap();
             let parsed_datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%b-%d %H:%M"); //converts string to NaiveDateTime, retunrs Result<NDT, err>
-
             //match, if we got a datetime back, set approach_datetime to it, otherwise set a default date
             let approach_datetime: NaiveDateTime = match parsed_datetime {
                 Ok(datetime) => datetime,
@@ -143,7 +148,6 @@ impl Store {
                     NaiveDateTime::from_timestamp_opt(0,0).unwrap() //use default if we error
                 }
             };
-
 
             //these variable make the query easier to read
             let name = asteroid.name.unwrap();
@@ -161,7 +165,7 @@ impl Store {
             let miss_distance_miles = asteroid.close_approach_data[0].miss_distance.miles.0.unwrap();
             let orbiting_body = asteroid.close_approach_data[0].orbiting_body.clone().unwrap();
 
-            //POST to the database (only insert unique asteroid name - date combos)
+            //POST this asteroids data to the database
             let res = sqlx::query!(
             r#" INSERT INTO asteroids (name, diameter_meters_min, diameter_meters_max, diameter_kmeters_min, diameter_kmeters_max, diameter_miles_max, diameter_miles_min, diameter_feet_min, diameter_feet_max, is_hazardous, close_approach_date, close_approach_datetime, relative_velocity_mph, miss_distance_miles, orbiting_body)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
@@ -171,8 +175,8 @@ impl Store {
                 .fetch_one(&self.conn_pool)
                 .await?;
 
-            //prepare Vec<Asteroids> to return as a result verifying the post
             //Make an Asteroid struct and add it to a Vec of Asteroids
+            //An Asteroid contains a DiameterInfo struct
             let size_info = DiameterInfo {
                 diameter_meters_min: res.diameter_meters_min,
                 diameter_meters_max: res.diameter_meters_max,
@@ -198,11 +202,13 @@ impl Store {
             added_asteroids.push(added);
         }
 
+        //After all asteroids from NASA process, post to the DB and are added to the added_asteroids vec, we can return it as there response
         Ok(added_asteroids)
     }
 
     ///Pulls all asteroids from the database that match the requested date, and are labeled as potential hazardous
     /// Parses the results to find the asteroid with the closest near miss
+    /// To be used in a search function on the site
     pub async fn get_closest_by_date(&mut self, today: String) -> Result<Option<Asteroid>, AppError> {
         let parse_from_str = NaiveDate::parse_from_str;
 
@@ -218,7 +224,6 @@ impl Store {
         if rows.is_empty(){
             println!("Nothing there....");
             Ok(None)
-
         } else {
             let mut asteroids: Vec<_> = rows
                 .into_iter()
@@ -288,10 +293,10 @@ impl Store {
         let mut near_miss_result = self.get_closest_by_date(today.to_string()).await?; //To call another impl function for the same struct, use self.functionname()
         let mut near_miss = near_miss_result.clone();
         let one_day = Duration::days(1);
-        let limit_back = 2; //how many days back we will check from todays date
+        let limit_back = 7; //how many days back we will check from today's date
         let mut count = 0;
 
-        //in the event we get None back in our Option<Asteroid> from get_closest_by_date....
+        //in the event we get None back in our Option<Asteroid> from get_closest_by_date....keep trying
         while near_miss.is_none() && count < limit_back {
             //set before to be the day previous to the last we tried
             today -= one_day; //subtract one day from today
@@ -300,6 +305,7 @@ impl Store {
             near_miss = near_miss_result.clone();
         }
 
+        //Initialize and empty PagePackage to be mutated
         let mut package = PagePackage {
             asteroid: None,
             message: "empty".to_string(),
@@ -322,7 +328,6 @@ impl Store {
             }
         }
         Ok(package)
-
 
     }
 

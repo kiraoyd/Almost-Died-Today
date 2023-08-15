@@ -1,0 +1,50 @@
+body {
+    font-family: 'courier-new', monospace;
+    color: white;
+    background-image: url('earth.jpg');
+    background-repeat: no-repeat;
+    background-color: #333; /* Fallback color in case image doesn't load */
+    background-size: cover; /* Make the image cover the entire element */
+    background-position: center; /* Center the image within the element */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Set the body height to viewport height */
+}
+
+h1 {
+    font-size: 72px;
+    margin-top: 20px;
+    text-align: center;
+    display: flex;
+    align-items: left;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); /* Add text-shadow with desired values */
+}
+
+h2 {
+    font-size: 32px;
+    margin-top: 20px;
+}
+
+p {
+    font-size: 20px;
+    background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white background *!*/
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.image-container {
+    /*background-color: rgba(211, 211, 211, 0.2); !* Adjust the color and opacity as needed *!*/
+    padding: 10px; /* Add some padding around the image */
+    display: inline-block; /* Allow the container to wrap around the image */
+    border-radius: 5px; /* Add rounded corners to the container */
+}
+
+/*.emphasis {*/
+/*    font-style: italic;*/
+/*    color: #ff9900;*/
+/*    display: inline-block; !* Keep the word inline without breaking the sentence *!*/
+/*    white-space: nowrap;*/
+
+/*}*/

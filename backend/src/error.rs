@@ -6,7 +6,6 @@ use sqlx::Error;
 
 #[derive(Debug)]
 pub enum AppError {
-    Question(QuestionError),
     Database(sqlx::Error),
     MissingCredentials,
     UserDoesNotExist,
@@ -17,22 +16,25 @@ pub enum AppError {
     Request(reqwest::Error),
     MissingContent,
     SerdeJson(serde_json::Error),
+    Date(DateError),
 
     #[allow(dead_code)]
     Any(anyhow::Error),
 
 }
 
+///A specific type of error, related directly to a Date requested but not found in the DB
 #[derive(derive_more::Display, Debug)]
-pub enum QuestionError {
-    InvalidId,
+pub enum DateError {
+    InvalidDate,
 }
 
+//Implements all the various error types listed in AppError
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AppError::Question(err) => match err {
-                QuestionError::InvalidId => (StatusCode::NOT_FOUND, err.to_string()),
+            AppError::Date(err) => match err {
+               DateError::InvalidDate => (StatusCode::NOT_FOUND, err.to_string()),
             },
             AppError::Database(err) => (StatusCode::SERVICE_UNAVAILABLE, err.to_string()),
             AppError::Request(err) => {
@@ -59,15 +61,15 @@ impl IntoResponse for AppError {
                 StatusCode::UNAUTHORIZED,
                 "There is already an account with that email address in the system".to_string(),
             ),
-            AppError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token".to_string()),
-            AppError::InvalidPassword => (StatusCode::UNAUTHORIZED, "Invalid Password".to_string()),
+            AppError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token, did you login? Are you a robot perhaps?".to_string()),
+            AppError::InvalidPassword => (StatusCode::UNAUTHORIZED, "Invalid Password. We all do it. Try again.".to_string()),
             AppError::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Something terrible happened".to_string(),
+                "Something terrible happened, but clearly not as terrible as a hunk of space rock crashing against the earth (winning!)".to_string(),
             ),
             AppError::MissingContent => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Comment missing content".to_string(),
+                "Missing content".to_string(),
             ),
         };
 
@@ -76,6 +78,7 @@ impl IntoResponse for AppError {
     }
 }
 
+//Convert the error types to an AppError from an establised error type
 impl From<sqlx::Error> for AppError {
     fn from(value: sqlx::Error) -> Self {
         AppError::Database(value)

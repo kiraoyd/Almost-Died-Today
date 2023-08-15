@@ -25,6 +25,7 @@ use crate::template::TEMPLATES;
 
 
 #[allow(dead_code)]
+///loads context to the main landing page, differing depending on if a user is logged on (has a JWT token stored as a browser cooke) or not
 pub async fn root(
     State(mut am_database): State<Store>, //has to be mutable to let db.rs call one of it's own function inside another of its functions
     OptionalClaims(claims): OptionalClaims,
@@ -36,9 +37,7 @@ pub async fn root(
 
     //The context is where we can add in dynamic data values to our html
     let mut context = Context::new();
-    //TODO I only want to do this periodically, not every page load....
-    //grab the nasa data
-    //TODO let added = am_database.post_current_from_nasa_api().await?;
+
     //set up what we want to render with, all contexts go here now and will be available to the specified .html files
     let template_name = if let Some(claims_data) = claims {
         //user is logged in and we have the claims to prove it
@@ -56,8 +55,8 @@ pub async fn root(
         "index.html" //route to original template when not logged in
     };
 
-    //TODO panicking here!!!
     //Along with that context and template, Tera will render everything
+    //Note: this render will err if the context placeholders in the html are done incorrectly
     let rendered = TEMPLATES
         .render(template_name, &context) //render takes all the context attached in template_name and inserts it
         .unwrap_or_else(|err| {
@@ -66,6 +65,10 @@ pub async fn root(
         });
     Ok(Html(rendered)) //Then we send the html back
 }
+
+
+//Build functions here as we make new CRUD stuff in db.rs
+//all handlers call some function from db.store
 
 ///Retrieves all asteroids from the database
 pub async fn get_asteroids(
@@ -98,15 +101,9 @@ pub async fn get_closest(
 }
 
 
-
-//Build functions here as we make new CRUD stuff in db.rs
-//all handlers call some function from db.store
-
-
 //Handlers below handle functionality related to login/users
 //In a real production site, we would use 3rd party Authorizaton instead of implementing our own
 //Credit: Casey Bailey 2023
-
 ///Accepts user Credentials in a UserSignup struct, checks all credentials exist and are valid, checks that requested user email for signup is not already
 /// present in the database. If everything this valid, hashes the password using argon2, resets the password feild in credentials, add thes new user to the
 /// database and returns the users information for confirmation

@@ -8,7 +8,7 @@ use tracing::info;
 
 
 use crate::db::Store;
-use crate::layers;
+use crate::{file_handler, handlers, layers};
 
 //bring in the various handler files here
 use crate::handlers::main_handlers;
@@ -21,11 +21,15 @@ use crate::handlers::main_handlers::root;
 pub async fn app(pool: PgPool) -> Router {
     let db = Store::with_pool(pool);
 
-
     //Middlewares
     let (cors_layer, trace_layer) = layers::get_layers();
 
+    let static_router = Router::new()
+        .route("/:filename", get(file_handler))
+        .with_state(db.clone());
+
     Router::new()
+        .nest("/static", static_router)
         .route("/", get(root))  //here is where we build ALL our html stuff too
         .route("/asteroids", get(main_handlers::get_asteroids))
         .route("/closest/:date", get(main_handlers::get_closest))
@@ -35,7 +39,7 @@ pub async fn app(pool: PgPool) -> Router {
         .route("/protected", get(main_handlers::protected))
         //this 404 route always caps off the routes
         .route("/*_", get(handle_404)) //if no other route is found, we have a page note found 404 error
-        //.merge(route_file()) //uncomment this once we have more route files to merge
+        //.merge(route_file()) //uncomment this oif we have more route files to merge
         //merge multiple routers together, we pass other routers into the .merge() function
         //The types of all the routers you merge HAS to be the same, meaning
         .layer(cors_layer)

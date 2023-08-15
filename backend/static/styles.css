@@ -1,0 +1,103 @@
+/* Apply a background image with dark gray dots */
+body {
+    background-image: url('space.jpg');
+    background-repeat: no-repeat;
+    background-color: #333; /* Fallback color in case image doesn't load */
+    background-size: cover; /* Make the image cover the entire element */
+    background-position: center; /* Center the image within the element */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Set the body height to viewport height */
+}
+
+/* Container for login and signup sections */
+.container {
+    display: flex;
+    flex-direction: column; /* Stack the sections vertically */
+    align-items: center; /* Center sections horizontally */
+}
+
+/* Style for the login and signup sections */
+.login-section, .signup-section {
+    background-color: rgba(255, 255, 255, 0.4); /* Semi-transparent white background */
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+    margin: 10px 0; /* Add some margin between the sections */
+}
+
+
+/* Style the text elements */
+body, h2, label, input {
+    color: black;
+    font-family: 'courier-new', monospace;
+}
+
+h1 {
+    font-size: 72px; /* Adjust this value as needed */
+    font-weight: bold;
+    margin-top: 40px;
+    margin-bottom: 20px;
+    text-align: center; /* Center the text */
+}
+
+/* Style the h2 elements */
+h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+/* Style the greeting paragraph */
+.greeting {
+    font-size: 36px; /* Adjust this value as needed */
+    font-weight: bold;
+    text-align: center; /* Center the text */
+    color: black;
+    margin: 20px 0; /* Add margin for spacing */
+}
+
+/* Style the input container */
+.input-container {
+    display: flex;
+    align-items: center;
+    margin: 5px;
+}
+
+/* Style the labels for input elements */
+.input-label {
+    width: 100px; /* Adjust this width as needed */
+    padding-right: 10px; /* Add spacing between label and input */
+    color: black;
+}
+
+/* Style the input elements */
+input[type="text"],
+input[type="password"] {
+    background-color: #f0e68c; /* Pale yellow */
+    color: black;
+    border: none;
+    padding: 5px;
+    margin: 5px;
+    border-radius: 3px;
+}
+
+/* Style the submit buttons */
+input[type="submit"] {
+    background-color: rgba(128, 10, 128, 0.8);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Add a smooth transition effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); /* Add a subtle shadow effect */
+}
+
+input[type="submit"]:hover {
+    background-color: pink; /* Change this to the hover color you want */
+    transform: translateY(-2px); /* Move button up slightly on hover */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.5); /* Increase shadow on hover */
+}
