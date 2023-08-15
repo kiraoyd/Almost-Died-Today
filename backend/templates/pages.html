@@ -10,7 +10,7 @@
 </head>
 <body>
 <!--Everything you see on a website-->
-<h1> There's always an ERROR ready to ruin life for absolutely everyone: </h1>
+<h1> There's always an asteroid ready to ruin life for absolutely everyone: </h1>
 
 <!--Just splash in the rust whenever you need it-->
 <!--Goes through the page_package vector and returns a package of things-->
@@ -22,13 +22,20 @@
     {% if page_package.asteroid.diameter_miles_max %}
     <p> It was roughly {{page_package.asteroid.diameter_miles_max}} miles wide.</p>
     {% endif %}
-
+    {% if page_package.asteroid.miss_distance_miles %}
+    <p> It only missed anhilating earth by {{page_package.asteroid.miss_distance_miles}} miles!! (Are your palms SO sweaty?)</p>
+    {% endif %}
+    {% if page_package.asteroid.relative_velocity_mph %}
+    <p> If it had smacked into earth it would have done so at a whopping {{page_package.asteroid.relative_velocity_mph}} miles per hour. Good times.</p>
+    {% endif %}
+    {% if page_package.asteroid.orbiting_body %}
+    <p> Will it come around again? Well NASA seems to think so, seeing as its orbiting {{page_package.asteroid.orbiting_body}} and all. </p>
+    {% endif %}
     {% else %}
     <h2> Ha, you lucky duck there were no near misses in the past week! All that existential anxiety for nothing eh?</h2>
     {% endif %}
-    Hi
 </div>
 
 </body>
 
-</html><!--Page where people go when logged in-->
+</html>
