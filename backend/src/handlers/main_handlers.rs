@@ -17,7 +17,7 @@ use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
 
 //bring in the models files here
-use crate::models::asteroid::{Asteroid, NearEarthObject};
+use crate::models::asteroid::{Asteroid, NearEarthObject, SearchResult, UserSearch};
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 
 //we need the templates crate at some point
@@ -98,6 +98,30 @@ pub async fn get_closest(
     let date = query.to_owned();
     let closest = am_database.get_closest_by_date(date).await?;
     Ok(Json(closest.unwrap()))
+}
+
+///Retreives asteroid that passed closest to earth on the date (a String) provided by the html Form, returns the found Asteroid (which will either be None or Asteroid)
+pub async fn search_from_form(
+    State(mut am_database): State<Store>,
+    Form(search_date):Form<UserSearch>, //search_date comes in from the frontend, is the info typed into the search form input field
+) -> Result<Json<SearchResult>, AppError>{
+    //make a SearchResult in preparation to be sent back
+    let mut result = SearchResult {
+        asteroid: None,
+        message: "No asteroid found to match that date requested.".to_string(),
+    };
+
+    let date = search_date.search_date.clone();
+
+    let found_asteroid = am_database.get_closest_by_date(date).await?;
+    if let Some(asteroid) = found_asteroid {
+        //then we have data
+        result.asteroid = Some(asteroid);
+        result.message = "Looky here, you got luck on this day too!".to_string();
+    }
+
+    Ok(Json(result))
+
 }
 
 

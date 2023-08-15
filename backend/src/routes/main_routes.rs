@@ -35,6 +35,7 @@ pub async fn app(pool: PgPool) -> Router {
         .route("/closest/:date", get(main_handlers::get_closest))
         .route("/current_asteroids", post(main_handlers::post_current_nasa))
         .route("/login", post(main_handlers::login))
+        .route("/search", get(main_handlers::search_from_form))
         .route("/users", post(main_handlers::register))
         .route("/protected", get(main_handlers::protected))
         //this 404 route always caps off the routes

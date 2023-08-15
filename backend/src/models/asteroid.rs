@@ -178,5 +178,15 @@ pub struct DiameterInfo {
 
 
 
+///Package for sending an Asteroid Search result back to the users page
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SearchResult {
+    pub asteroid: Option<Asteroid>,
+    pub message: String,
+}
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UserSearch {
+    pub search_date: String,
+}
 

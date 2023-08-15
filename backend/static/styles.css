@@ -29,12 +29,18 @@ body {
 
 
 /* Style the text elements */
-body, h2, label, input {
+body, h2 {
+    color: black;
+    font-family: 'courier-new', monospace;
+}
+
+label, input {
     color: black;
     font-family: 'courier-new', monospace;
 }
 
 h1 {
+    color: white;
     font-size: 72px; /* Adjust this value as needed */
     font-weight: bold;
     margin-top: 40px;
@@ -52,10 +58,10 @@ h2 {
 
 /* Style the greeting paragraph */
 .greeting {
+    color: white;
     font-size: 36px; /* Adjust this value as needed */
     font-weight: bold;
     text-align: center; /* Center the text */
-    color: black;
     margin: 20px 0; /* Add margin for spacing */
 }
 

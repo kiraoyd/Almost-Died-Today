@@ -26,3 +26,4 @@ impl IntoResponse for PagePackage {
         Json(self).into_response()
     }
 }
+

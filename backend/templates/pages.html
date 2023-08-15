@@ -11,8 +11,19 @@
 </head>
 <body>
 <!--Everything you see on a website-->
+<div class="left-container">
+    <form action="/search" method="get">
+        <div class="input-container" id="search-bar">
+            <label class="input-label" for ="search_field">Want to see how close we came to extinction on a particular day? Enter the date you wish to search for: </label>
+            <input type="text" id="search_field" name="search_date">
+            <input type="submit" value="search">
+        </div>
+    </form>
+
 <h1> There's always an asteroid ready to ruin life for absolutely everyone. </h1>
 
+
+</div>
 <!--Just splash in the rust whenever you need it-->
 <!--Goes through the page_package vector and returns a package of things-->
 <!--If you want to write CSS, match it to any class tag in a div, h2, etc to apply styles-->
@@ -36,7 +47,7 @@
     <p> Will it come around again? Well NASA seems to think so, seeing as its orbiting {{page_package.asteroid.orbiting_body}} and all. </p>
     {% endif %}
     {% else %}
-    <h2> Ha, you lucky duck there were no near misses in the past week! All that existential anxiety for nothing eh?</h2>
+    <h2> Ha, well not this time I guess. You lucky duck, there were no near misses in the past week! All that existential anxiety for nothing eh?</h2>
     {% endif %}
 </div>
 

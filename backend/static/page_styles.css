@@ -12,6 +12,31 @@ body {
     height: 100vh; /* Set the body height to viewport height */
 }
 
+/* Style the left container */
+.left-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 20px;
+}
+
+/* Style the search input container */
+#search-bar {
+    width: 50%; /* Set the width to 50% of the left container */
+    margin: 0 auto; /* Center the input container horizontally */
+    background-color: rgba(255, 220, 220, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+/* Style the form elements */
+form {
+    margin-top: 20px;
+}
+
+
 h1 {
     font-size: 72px;
     margin-top: 20px;
