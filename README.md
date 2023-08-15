@@ -89,7 +89,10 @@ There are a few requirements I chose to omit, or just didn't get to in time:
 
 - Since my site is more of an information hub, rather than an interactive place, I didn't come up with a way to has users save and delete some kind of choice.
 If I wanted to add something like this in the future, I suppose I could add a feature to allow users to save the asteroid data displayed on some particular day, so they could go back and view their saved doomsday info whenever they want. But this is a stretch goal.
-- I wasn't able to get the search function running just yet (if I do I will delete this comment), so I don't have an interactive user query to the NASA API route to contend with yet.
+- I just got the search feature running, and if I have time I will update it to have an interactive user query to the NASA API route if the date is not found in our database.
+  (The plan: check our database first, if nothing found, query nasa for a result, if we get one, post it to our database and render it for display)
 - Lastly, I ran out of time before implementing the user roles and allowing admins to "ban" users accounts.
+- I JUUUUUST realised that if you register, you get routed to a blank page to see a JSON message, I need to fix this!
+- Also a bug to fix: we panic if the date entered by the user is not valid
 
 
