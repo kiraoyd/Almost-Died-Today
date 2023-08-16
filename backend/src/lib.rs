@@ -6,6 +6,7 @@ use crate::routes::main_routes;
 use axum::body::{boxed, BoxBody};
 use axum::extract::Path;
 use axum::response::Response;
+use axum::Json;
 use chrono::{Duration as ChronoDuration, NaiveDate};
 use derive_more::Display;
 use dotenvy::dotenv;
@@ -15,6 +16,7 @@ use models::asteroid::{NasaData, NearEarthObject};
 use reqwest::Client;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sqlx::PgPool;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -32,6 +34,7 @@ use crate::db::new_pool;
 use crate::db::Store;
 use crate::error::AppError;
 use crate::handlers::main_handlers::post_current_nasa;
+use crate::models::asteroid::Asteroid;
 
 //Don't forget to make all your files accessible to the crate root HERE
 pub mod db;
@@ -51,18 +54,13 @@ pub async fn run_backend() {
     //get the socket Addr, based off the .env info
     let addr = get_host_from_env();
 
-    let mut pool = new_pool().await;
+    let pool = new_pool().await; //TODO made pool not mut
 
-    /*
-       let db = Store::with_pool(pool);
-       //grab the nasa data
-       let added = post_current_nasa(db).await;
-       //println!("We just posted this data: {}", added);
-
-    */
+    //grab the nasa data
+    let db = upload_nasa_data(pool).await;
 
     //this will do all the things, attach to the db, insert cors, set up the router
-    let app = routes::main_routes::app(pool).await;
+    let app = routes::main_routes::app(db).await;
 
     info!("Listening...");
 
@@ -99,6 +97,13 @@ fn init_logging() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
+
+pub async fn upload_nasa_data(pool: PgPool) -> Store {
+    let mut db = Store::with_pool(pool);
+    let posted = db.post_current_from_nasa_api().await;
+    //return ownership of the pool here
+    db
 }
 
 ///Retrieves all asteroid data from NASA API, formats to our Rust Asteroid struct in preparation for a POST route

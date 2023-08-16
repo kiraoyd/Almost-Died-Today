@@ -82,7 +82,11 @@ pub async fn search_from_form(
     if let Some(asteroid) = found_asteroid {
         //then we have data
         result.asteroid = Some(asteroid);
-        result.message = format!("Looky here, we all got lucky on {} too!", search_date.search_date).to_string();
+        result.message = format!(
+            "Looky here, we all got lucky on {} too!",
+            search_date.search_date
+        )
+        .to_string();
         result.has_data = true;
     }
 
@@ -142,9 +146,9 @@ pub async fn get_closest(
 /// present in the database. If everything this valid, hashes the password using argon2, resets the password feild in credentials, add thes new user to the
 /// database and returns the users information for confirmation
 pub async fn register(
-    State(mut database): State<Store>,
+    State(database): State<Store>, //TODO removed mut from database
     Form(mut credentials): Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
-) -> Result<Json<Value>, AppError> {
+) -> Result<Json<Value>, AppErrorq> {
     //missing feilds
     if credentials.email.is_empty() || credentials.password.is_empty() {
         return Err(AppError::MissingCredentials);
@@ -157,7 +161,8 @@ pub async fn register(
 
     //user already is in database with this email address
     let existing_user = database.get_user(&credentials.email).await;
-    if let Ok(_) = existing_user {
+    //TODO removed: if let Ok(_) = existing_user
+    if existing_user.is_ok() {
         return Err(AppError::UserAlreadyExists);
     }
 
@@ -183,8 +188,8 @@ pub async fn register(
 
 ///Verifies the credentials given by a user trying to login, if valid,make a JWT token and store it as a browser cookie
 pub async fn login(
-    State(mut database): State<Store>,
-    Form(creds): Form<User>, //The credentials will be sent back on submit of the html form
+    State(database): State<Store>, //TODO removed mut
+    Form(creds): Form<User>,       //The credentials will be sent back on submit of the html form
 ) -> Result<Response<Body>, AppError> {
     if creds.email.is_empty() || creds.password.is_empty() {
         return Err(AppError::MissingCredentials);
@@ -194,7 +199,8 @@ pub async fn login(
 
     //use argon2 to reverse hash and verify the given password
     let is_password_correct =
-        match argon2::verify_encoded(&*existing_user.password, creds.password.as_bytes()) {
+        match argon2::verify_encoded(&existing_user.password, creds.password.as_bytes()) {
+            //TODO removed * in &*existing_user.password
             Ok(result) => result,
             Err(_) => {
                 return Err(AppError::InternalServerError);

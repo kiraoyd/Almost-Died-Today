@@ -1,10 +1,10 @@
 use crate::models::asteroid::Asteroid;
 
+use crate::error::AppError;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use derive_more::Display;
 use serde_derive::{Deserialize, Serialize};
-use error::AppError;
 
 ///Packs up the information needed to supply context to our pages.html Tera template file
 #[derive(Serialize, Deserialize, Debug, Clone, Display)]
@@ -27,12 +27,12 @@ impl IntoResponse for PagePackage {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Display)]
-#[display(
-fmt = "err_message: {:?}, has_error: {:?}",
-err_message,
-has_error
-)]
+// #[derive(Serialize, Deserialize, Debug, Clone, Display)]
+// #[display(
+// fmt = "err_message: {:?}, has_error: {:?}",
+// err_message,
+// has_error
+// )]
 pub struct ErrorPackage {
     pub err_message: AppError,
     pub has_error: bool,

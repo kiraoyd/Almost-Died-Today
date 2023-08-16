@@ -1,6 +1,5 @@
 use tera::Tera;
 
-///Sets up Tera templating
 lazy_static::lazy_static! {
     pub static ref TEMPLATES: Tera = {
         let mut tera = match Tera::new("templates/**/*") {

@@ -17,8 +17,8 @@ use crate::handlers::main_handlers::root;
 //use crate::routes::comment_routes::comment_routes;
 
 //takes in a pool, sets up the db seeds, layers on middlewares, and returns a new router
-pub async fn app(pool: PgPool) -> Router {
-    let db = Store::with_pool(pool);
+pub async fn app(db: Store) -> Router {
+    //let db = Store::with_pool(pool);
 
     //Middlewares
     let (cors_layer, trace_layer) = layers::get_layers();
