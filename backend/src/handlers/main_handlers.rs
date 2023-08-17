@@ -148,7 +148,7 @@ pub async fn get_closest(
 pub async fn register(
     State(database): State<Store>, //TODO removed mut from database
     Form(mut credentials): Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
-) -> Result<Json<Value>, AppErrorq> {
+) -> Result<Json<Value>, AppError> {
     //missing feilds
     if credentials.email.is_empty() || credentials.password.is_empty() {
         return Err(AppError::MissingCredentials);
@@ -190,9 +190,12 @@ pub async fn register(
 pub async fn login(
     State(database): State<Store>, //TODO removed mut
     Form(creds): Form<User>,       //The credentials will be sent back on submit of the html form
-) -> Result<Response<Body>, AppError> {
+) -> Result<Response<String>, AppError> {
+
+    let mut context = Context::new();
+
     if creds.email.is_empty() || creds.password.is_empty() {
-        return Err(AppError::MissingCredentials);
+        Err(AppError::MissingCredentials);
     }
 
     let existing_user = database.get_user(&creds.email).await?;
@@ -227,9 +230,13 @@ pub async fn login(
     //we will store the token as a cookie
     let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
 
+    //TODO add error context in here
+    //TODO RENDER the Template
     let mut response = Response::builder()
         .status(StatusCode::FOUND)
-        .body(Body::empty())
+        .body(Body::empty()) //TODO stick the html that gets rendered, inside the body here!
+        //TODO then we don't need to return html at all, just the response: Response<String>
+        //TODO axum will handle grabbing that html out of the body, hoepfully
         .unwrap();
 
     response

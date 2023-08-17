@@ -162,6 +162,7 @@ pub async fn get_static_file(uri: Uri) -> Result<Response<BoxBody>, (StatusCode,
 
     // `ServeDir` implements `tower::Service` so we can call it with `tower::ServiceExt::oneshot`
     // When run normally, the root is the workspace root (backend for us if we're running from backend)
+    //Route to the path to match wherever you're putting your CSS here:
     match ServeDir::new("./static").oneshot(req).await {
         Ok(res) => Ok(res.map(boxed)),
         Err(err) => Err((
