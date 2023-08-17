@@ -17,8 +17,7 @@ Features still to be implemented:
 - Provide logout functionality
 - Place the NASA API query on a timed fetch.
 - Render a completely different page style if no asteroid near miss is found within the last week.
-- Registration needs to reroute back to the landing page, rather than show raw JSON
--
+
 
 
 ## To Run
@@ -108,7 +107,8 @@ Likely I will want the scheduled query to NASA to run every hour or so, in case 
 LAST MINUTE ADD ON: I just added in the feature to the login handler, so that if the user hits the login button while leaving the form blank, or if the users password is wrong, the index.html refreshes and displays new error context.
 To do this I made a LoginErrors struct to hold the flags for each kind of login error, and the message associated. 
 I want to make one for if the user isn't found as well, and will update this struct to have those feilds once I get to it.
-I dind't write about this part in the Journal as it was a last minute addition.
+I didn't write about this part in the Journal as it was a last minute addition. And also, I got the registration page to reroute as well!
+
 
 On the CSS: I took Casey's advice and had chatGPT help me out with this. 
 I was pleasantly surprised at how much I did actually remember, and was able to use this to remedy the MANY MANY times chatGPT was just plain wrong.

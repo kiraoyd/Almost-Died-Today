@@ -123,3 +123,19 @@ input[type="submit"]:hover {
     transform: translateY(-2px); /* Move button up slightly on hover */
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.5); /* Increase shadow on hover */
 }
+
+.home-button {
+    background-color: rgba(128, 10, 128, 0.8);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    position: fixed;
+    bottom: 20px; /* Position at the bottom with some spacing */
+    left: 50%; /* Move to the horizontal center */
+    transform: translateX(-50%); /* Center the button horizontally */
+    margin: 10px;
+}

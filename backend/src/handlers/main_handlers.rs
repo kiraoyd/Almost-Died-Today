@@ -18,7 +18,7 @@ use crate::get_timestamp_after_8_hours;
 
 //bring in the models files here
 use crate::models::asteroid::{Asteroid, NearEarthObject, SearchResult, UserSearch};
-use crate::models::page::LoginErrors;
+use crate::models::page::{LoginErrors, RegistrationErrors};
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 
 //we need the templates crate at some point
@@ -149,42 +149,90 @@ pub async fn get_closest(
 pub async fn register(
     State(database): State<Store>, //TODO removed mut from database
     Form(mut credentials): Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
-) -> Result<Json<Value>, AppError> {
-    //missing feilds
+) -> Result<Html<String>, AppError> {
+
+    let mut context = Context::new();
+
+    let mut error = RegistrationErrors {
+        missing_cred: false,
+        missing_cred_message: "".to_string(),
+        user_exists: false,
+        user_exists_message: "".to_string(),
+    };
+
+    //basic template with an empty error context, routes to the success page to show successful registration
+    //We only keep this one if none of the following if-statements trigger
+    let mut template_name = {
+        context.insert("error", &error);
+        "success.html"
+    };
+
+    let mut error_flag = false;
+
+    //MISSING CREDENTIALS ERROR situation
     if credentials.email.is_empty() || credentials.password.is_empty() {
-        return Err(AppError::MissingCredentials);
+        error.missing_cred = true;
+        error.missing_cred_message = "A new username and password is required to register.".to_string();
+        template_name = {
+            context.insert("error", &error);
+            "index.html"
+        };
+        error_flag = true;
     }
 
     //password and password confirmation do not match
     if credentials.password != credentials.confirm_password {
-        return Err(AppError::MissingCredentials);
+        error.missing_cred = true;
+        error.missing_cred_message = "A new username and password is required to register. Please enter your password again to confirm registration.".to_string();
+        template_name = {
+            context.insert("error", &error);
+            "index.html"
+        };
+        error_flag = true;
     }
 
     //user already is in database with this email address
     let existing_user = database.get_user(&credentials.email).await;
-    //TODO removed: if let Ok(_) = existing_user
+    //If we get a good result, then the user already exists
     if existing_user.is_ok() {
-        return Err(AppError::UserAlreadyExists);
+        error.user_exists = true;
+        error.user_exists_message = "Sorry, that username has already been taken, please try a different one.".to_string();
+        template_name = {
+            context.insert("error", &error);
+            "index.html"
+        };
+        error_flag = true;
     }
 
-    //if user and credentials are valid, hash their password
-    let hash_config = Config::default();
-    let salt = std::env::var("SALT").expect("Missing SALT");
-    //use argon2 to hash with the given SALT
-    let hashed_password = match argon2::hash_encoded(
-        credentials.password.as_bytes(),
-        salt.as_bytes(),
-        &hash_config,
-    ) {
-        Ok(result) => result,
-        Err(_) => {
-            return Err(AppError::Any(anyhow::anyhow!("Password hashing failed")));
-        }
-    };
+    if !error_flag {
+        //if user and credentials are valid, hash their password
+        let hash_config = Config::default();
+        let salt = std::env::var("SALT").expect("Missing SALT");
+        //use argon2 to hash with the given SALT
+        let hashed_password = match argon2::hash_encoded(
+            credentials.password.as_bytes(),
+            salt.as_bytes(),
+            &hash_config,
+        ) {
+            Ok(result) => result,
+            Err(_) => {
+                return Err(AppError::Any(anyhow::anyhow!("Password hashing failed")));
+            }
+        };
 
-    credentials.password = hashed_password; //reset the password feild in credentials to be the hashed one
-    let new_user = database.create_user(credentials).await?;
-    Ok(new_user)
+        credentials.password = hashed_password; //reset the password feild in credentials to be the hashed one
+        let new_user = database.create_user(credentials).await?;
+    }
+
+    let rendered = TEMPLATES
+        .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+        .unwrap_or_else(|err| {
+            error!("Template rendering error: {}", err);
+            panic!()
+        });
+
+    Ok(Html(rendered))
+
 }
 
 ///Verifies the credentials given by a user trying to login, if valid,make a JWT token and store it as a browser cookie
@@ -192,7 +240,7 @@ pub async fn register(
 /// Still needs to handle if we don't find the requested user
 pub async fn login(
     State(database): State<Store>,
-    Form(creds): Form<User>,       //The credentials will be sent back on submit of the html form
+    Form(creds): Form<User>, //The credentials will be sent back on submit of the html form
 ) -> Result<Response<String>, AppError> {
     let mut context = Context::new();
     //will store the context info if any errors related to login occur
@@ -225,13 +273,12 @@ pub async fn login(
                 panic!()
             });
 
-        let mut response = Response::builder()
+        let response = Response::builder()
             .status(StatusCode::FOUND)
             .body(rendered) //stick the html that gets rendered, inside the body here!
             .unwrap();
 
         Ok(response) //return right away on error
-
     } else {
         //We have credentials, but what if one is invalid?
         let existing_user = database.get_user(&creds.email).await?;
@@ -257,7 +304,6 @@ pub async fn login(
                 "index.html"
             };
 
-
             let rendered = TEMPLATES
                 .render(template_name, &context) //render takes all the context attached in template_name and inserts it
                 .unwrap_or_else(|err| {
@@ -265,13 +311,12 @@ pub async fn login(
                     panic!()
                 });
 
-            let mut response = Response::builder()
+            let response = Response::builder()
                 .status(StatusCode::FOUND)
                 .body(rendered) //stick the html that gets rendered, inside the body here!
                 .unwrap();
 
             Ok(response) //return right away on error
-
         } else {
             //the password is CORRECT, and we can create the JWT token
 
