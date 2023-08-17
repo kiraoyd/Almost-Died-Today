@@ -1,15 +1,25 @@
-# Journal
+# Journal of Progress and Issues
+###  For Summer Term 2023, Final Project in the Rust Web course: Almost Died Today
+
+Reflection Note: Will you look at that, I think I built a site MVP in only 7-8 days of actual work. :) 
 
 ### 7/27/23
 
 First things first, lets copy over the docker-compose.yaml for postgres, and change the DB password, username, and db name to "asteroid"
 Set up the gitignore.
+
 Create a backend directory.
-Make the backend .env (make sure it isn't being tracked in git!).
+
+Make the backend .env (make sure it isn't being tracked in git! Because boy have I made that mistake too many times).
+
 In the .env, change the names to match the .yaml, aso the URL changes to: ```DATABASE_URL=postgres://asteroid:asteroid@localhost/asteroid```
+
 Create the .env.example file.
+
 Create the cargo.toml file for backend, OH I should have done a cargo new for this, oh well ha.
+
 Brought in everything from the class project .toml for now.
+
 Create the src folder, and it's main.rs, in backend.
 
 Create the client directory with cargo new.
@@ -40,32 +50,42 @@ Alright time to test this thing and keep building...
 postgres connects to it's Docker container and runs great.
 Whoops, forgot to write the layers.rs file, I'm pulling this one direct from the class project repo.
 Also forgot to pub mod all the new files inside of lib.rs.
-Oh year you know what might help, making a .env on this machine haaaaaa: ```cp .env.example .env```
+
+Oh yea you know what also might help, making a .env on this machine haaaaaa: ```cp .env.example .env```
+
 Ok guess I forgot where I was, and I haven't built my DB schema or migrations yet, so time to do that.
 But the good news is the server itself appears to be set up correctly!
 
 But real quick first, I'm going to refactor things like Casey showed us in class yesterday.
+
 That's set up, now on to flush out the models directory with my db structs, and make my actual schema in migrations.
 I'm going to reference the NASA API's sample query data to determine what information exactly I'd like to store in my sites DB for use.
-Yeuch, looking at raw JSON sure is a pain. 
-Oh side quest: I need to make the error.rs file now too.
-So parsin the API response JSON is fun, I decided to build a NASAAPI.md file just to keep track of the JSON format for a query rsponse to NeoW's
-That way I could keep track of how to GET to the data in that response in my own queries.
-Now I need to decide what bits I actually want to use on my site and keep in my database. 
+
+Yeuck, looking at raw JSON sure is a pain, looks like it's time for a....
+
+...SIDEQUEST!!!!  I need to make the error.rs file, so lets get that done to distract me from the hell that is this NASA API response I so naiively chose.
+
+Ok back at it. Parsing the API response JSON is fun, I decided to build a NASAAPI.md file just to keep track of the JSON format for a query rsponse to NeoW's. Feel free to ogle  at it.
+
+Now I can keep track of how to GET to the data in that response in my own queries.
+I need to decide what bits I actually want to use on my site and keep in my database. 
 I think I'll want all the diameter/size data, to be able to display.
-I'll want the asteroid name (which looks like I need to query ANOTHER api to get), itss is_hazardous indication, the close approach datetime, the relative velcocity, miss distance, and orbiting body
+I'll want the asteroid name (which looks like I need to query ANOTHER api to get), its is_hazardous indication, the close approach datetime, the relative velcocity, miss distance, and orbiting body
 
 Looks like orbiting body can only be earth, mars or venus so I will make a Planet enum to hold these and add to it if I find any other planets in the resposnes.
-All numerical data is represented by floats, so I'll type them as f64's
-For the date and datetime I'll use chrono's NaiveDate and NaiveDateTime types (thanks chatGPT)
+All numerical data is represented by floats, so I'll type them as f64's.
+For the date and datetime I'll use chrono's NaiveDate and NaiveDateTime types (thanks chatGPT).
+I want the id to be of type AsteroidId, so I'm using the macro Casey showed us in class to handle templating out the struct for an ID type and it's impls.
 
-I want the id to be of type ASteroidId, so I'm using the macro Casey showed us in class to handle templating out the struct for an ID type and it's impls.
 Ok now to add some migrations. 
 First thing I had to stop and think about is: in my rust struct for an asteroid, I'm packaging up all the diamter info into a seperate struct, do I need to reflect this in the DB table columns in some way?
 The conclusion I have drawn is, no. I don't. I'll just have a column for each and when I create a new rust struct in a route, handle popualting the struct feild from the table there.
+
 Great, I have a table add and a seed for that table (with only one row but oh well good enough for now) up and running! Verified in teh DB tool in intellij.
 Now I am going to try to build my backend again, and test the basics I built there.
+
 Ok forgot to pub mod the error and to change the import for app.
+
 Yes! we are listening!
 Now on to writing the integration test to hit the test_db route. But I'll have to stop and do that next as my next class is starting.
 
@@ -78,7 +98,7 @@ Ok having issues using map on my iterator.....asking on zulip.
 
 Casey pointed out I was missing templates.rs for the Tera templating, I'll go add that now!
 
-Also thanks to casey, I learned that anythign set to NOTNULL in my db including the PKID, will not need to be an option type in its corresponding struct feild.
+Also thanks to casey, I learned that anything set to NOT NULL in my db including the PKID, will not need to be an option type in its corresponding struct feild.
 To that point, I only need to use the .map() function on feilds that are an Option type.
 .map(|x| x) sets the closure inside the map function, to say: if there is a value here, keep it, otherwise return None
 
@@ -93,7 +113,8 @@ So the logic here will be: query for the asteroids of that date and specificatio
 So I'll iterate over them, tracking the smallest seen until I find it. Then I will store that in an Asteroid struct and return it.
 
 I was hoping iter had some kind of "find the max" function, and this reddit post might have the answer: https://www.reddit.com/r/rust/comments/31syce/using_iterators_to_find_the_index_of_the_min_or/
-Looks liek there is an enumerate().min_by() function available. 
+
+Looks like there is an enumerate().min_by() function available. 
 I found it in the docs and will try min_by_key(), sending it the miss_distance_miles value for each row in rows.
 https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html#method.max_by_key
 But iterating over the rows from the query seems complicated due to the type, so I'm going to try to map to Rust structs, then iterate over THOSE.
@@ -104,21 +125,25 @@ That fixed it, just needed to parseit from &str to NaiveDate.
 But now....I can't use min_by_key to find the max value in my vec of structs, because Ord isn't implemented for an f64. BWAAAAA.
 Ok so I am going to try another approach: sort the Vec from smallest to largest miss_distance_miles values: https://www.reddit.com/r/rust/comments/yl3tov/total_cmp_on_f32_and_f64_and_ord/
 Using total_cmp as seen in the docs example here:https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp
-The only issue is, how do I handle if there are any null values here? Ok I'll only collect up asteroids that have values in that feild, how bout that.
-Grrrrg it_empty() is not impld for f64. Nothing seems to be available for f64 whyyyy. Lets go to the docs again.
+The only issue is, how do I handle if there are any null values here? Ok I'll only collect up asteroids that have values in that feild, how bout THAT, Brenda.
 
-Ok I changed direction, I'll just iterate over the sorted asteroids, and use a match statement to pull the first one that has Some() value, then stop.
+Grrrrg is_empty() is not impl'd for f64. Nothing seems to be available for f64 whyyyy. Let's go to the docs again.
+
+Ok I laid down for a minute and decided to change direction. I'll just iterate over the sorted asteroids, and use a match statement to pull the first one that has Some() value, then stop.
 Now I'm setting up the handler and route for this endpoint, and here is my first lifetime issue! 
 I need an &str to pass through the functions, and I think this is problematic somehow.
 I tried to clone the query param for the date, rather than try to keep passing the reference, but clone wasn't working.
 I ended up finding to_owned, and learning that a clone converts an &T to a T, wheras to_owned can convert &T to another target type, and allow the ownership to be passed.
 https://www.reddit.com/r/rust/comments/l5uih4/what_is_the_difference_between_clone_and_to_owned/
+
 Ok but this appears to convert the &str to a....String type, so I think I need to change what get_closest_by_date expects as an arg.
 Ah and I need to adjust how I pass the date into the parse_from_str function, as it needs a str not a String.
 Ok that just pushed the lifetime error up one level, to the router itself. 
-So maybe passing an &str at all is just a bad idea here. Lets try get_closest accepting the query as a String from the get go, then we only turn it into a str when we need to in the final query code (when we convert it to a NaiveDate).
+So maybe passing an &str at all is just a bad idea here. 
+
+Lets try get_closest accepting the query as a String from the get go, then we only turn it into a str when we need to in the final query code (when we convert it to a NaiveDate).
 Yes that worked! So far no errors. Tho I'm not sure if having the query param be of type String will cause more problems when I try to hit the endpoint.
-Ok I tested from postman, it works! One issue, what if we don't find a matching asteroid? I need to handle the return differently.
+Nope, guess not! I tested from postman, it works! One issue, what if we don't find a matching asteroid? I need to handle the return differently.
 
 
 ### 8/6/2023
@@ -144,14 +169,15 @@ Ahahahahahahaha (maniacal laughter continues)....so After much pain I have final
 I could have left out some feilds with data I didn't want, serde can handle that, but after a day lost to this, I decided to bite the bullet and feed ChatGPT the NASA JSON and ask it really nicely to show me the Rust struct equivalents.
 I am not sorry I did this, the struct heirarchy for this API was kind of crazy, and what chatGPT gave me was way nicer than what I would have produced.
 I adjusted some things like making feilds public, and adjusting the Derives a bit, as well as making All the necesary feilds Options and handling the one case where I needed a String to deserialize into a number.
+
 So NOW all I need to do is go back through the code I'd previously written (commented out at this commit to test the NASA route easily), and redo with the new struct structures.
 Actually I think I can keep the old Asteroid struct (renaming it tho) to represent the data I want stored from that API response, in my database.
-That way I don't need to change the SQL or actually, much of the routes either, I'll just need to be careful how I post from the new ASteroid struct to the darabase representation one.
+That way I don't need to change the SQL or actually, much of the routes either, I'll just need to be careful how I post from the new ASteroid struct to the database representation one.
 Ok that wasn't so bad, It's running! 
 
-Still to do: Post the nasa data to the database
-Add authorization (just do it like we did in class, with user table storing id and password)
-Add a frontend to display data (build out index.html)
+Still to do: Post the nasa data to the database,
+Add authorization (just do it like we did in class, with user table storing id and password),
+Add a frontend to display data (build out index.html),
 Fix the get closest by date route to handle when there is noting found for the date requested
 
 ### 8/10/2023
@@ -170,11 +196,12 @@ I also only need a simple PagePackage struct for now, that contains the Asteroid
 Eventually I want to implement the search function, and have a seperate page that includes a Search Bar if you are logged in.
 But for the MVP, I will just display a different message on the same main page if the user is logged in, than if they are not.
 
-Ok everything is working with the html templates, I just can't get my css to render yet. 
+Everything is working with the html templates, I just can't get my css to render yet. 
 The big thing: Fix that route to grab an asteroid! What do we do if there is NO asteroid for today? 
 I need to handle that otherwise things breaaaak.
 
-8/14/2023
+### 8/14/2023
+
 Aha! It was just an issue with the format string I gave parse_from_str for a datetime.
 A big duh moment, it needs to include the hours and minutes! 
 Also I needed to change the format string to match the month based on characters: "%Y-%b-%d %H:%M"
@@ -188,8 +215,31 @@ You know what? YOU KNOW WHAT?! I just spent an hour chasing down why Tera was no
 So the context I was calling in the template was off by one character. Arrrrg.
 But on the bright side, it now renders!
 
-Next up: where should I put the call to gather nasa data and post it to my database? I don't want it to happ
+Next up: where should I put the call to gather nasa data and post it to my database? I don't want it to happen every single page refresh.
 
+### 8/16/2023
+
+Well I got lost down the "have chatGPT make me some nice CSS please" hole, and that was fun.
+I got so absorbed I completely forgot to update anything here so, this section is lost to the void I'm afraid.
+
+With Casey's advice I ended up putting the NASA API call in the run_backend function.
+This was a great Rust teaching moment. 
+I had previously built all the NASA query and subsquent POSTing of the respose data, into my db Store implementations.
+Now I wanted to have a generic lib.rs function that would call that handler from my db Store.
+The issue here was, in run_backend, it's the app that creates the Store, so the only thing I had access to (or thought I had access too), was the pool itself.
+Cue me trying to pass the pool around and the borrow checker coming after me like a shark in chummy water.
+The missing key point I had forgotten (sorry Bart, I KNOW you taught us this in Rust last term!), was that when you pass something to a function, that also transfers ownership of that function, FOREVER.
+So here I was passing my pool around and destroying all the previous ownerships I needed back in run_backend, and making it impossible for my App to then establish its db Store with that same pool.
+What to do? First off, try changing the pool to be a mutable reference.
+That didn't work. Maybe I need to rip the handler out of db Store and recreate it here in lib.rs?
+Nope, also didn't work because the sqlx query had trouble with the move.
+I reached out to Casey and he saved me with a simple idea: if the pool must change hands to a function, to get ownership back after the function finishes, simply return the pool again and catch it!
+Eureka! We are in business. 
+I needed to make a few alterations (the new lib.rs function now does the work to establish the db Store, and actually returns THAT instead of the pool), and we are up and running.
+
+It's now time to go clean this up, run clippy, bite the bullet on the things I didn't finish in time for the deadline (will keep working on this after class ends), and submit! 
+
+I'll be impressed if anyone read all of this. I think I owe you an hour of your life back. :) Thanks tho, I do appreciate it.
 
 
 ## Tracking my workflow step by step (some modifications for what I discovered later that should be done earlier)
@@ -236,4 +286,4 @@ We will add in more impl's for the queries we want, after geting the database sc
 33. Go to api.nasa.gov, generate an API Key. Account info and API key is in the .env
 34. To query the NeoW's API:  GET https://api.nasa.gov/neo/rest/v1/feed?start_date=START_DATE&end_date=END_DATE&api_key=API_KEY
 
-
+If you got this far...I clearly gave up on this step by step thingy. To be completely honest, it was mostly so I'd be able to refer back and help other students with their workflow if needed. Oh well. RIP idea.

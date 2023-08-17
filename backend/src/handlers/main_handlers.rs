@@ -18,6 +18,7 @@ use crate::get_timestamp_after_8_hours;
 
 //bring in the models files here
 use crate::models::asteroid::{Asteroid, NearEarthObject, SearchResult, UserSearch};
+use crate::models::page::LoginErrors;
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 
 //we need the templates crate at some point
@@ -187,67 +188,132 @@ pub async fn register(
 }
 
 ///Verifies the credentials given by a user trying to login, if valid,make a JWT token and store it as a browser cookie
+///Has one heck of an ugly if/else logic set up for rendering a particular html file...but oh well, good enough for now
+/// Still needs to handle if we don't find the requested user
 pub async fn login(
-    State(database): State<Store>, //TODO removed mut
+    State(database): State<Store>,
     Form(creds): Form<User>,       //The credentials will be sent back on submit of the html form
 ) -> Result<Response<String>, AppError> {
-
     let mut context = Context::new();
-
-    if creds.email.is_empty() || creds.password.is_empty() {
-        Err(AppError::MissingCredentials);
-    }
-
-    let existing_user = database.get_user(&creds.email).await?;
-
-    //use argon2 to reverse hash and verify the given password
-    let is_password_correct =
-        match argon2::verify_encoded(&existing_user.password, creds.password.as_bytes()) {
-            //TODO removed * in &*existing_user.password
-            Ok(result) => result,
-            Err(_) => {
-                return Err(AppError::InternalServerError);
-            }
-        };
-
-    if !is_password_correct {
-        return Err(AppError::InvalidPassword);
-    }
-
-    //Now we have validated the users creds, lets make claims piece of the token
-    let claims = Claims {
-        id: 0,
-        email: creds.email.to_owned(),
-        exp: get_timestamp_after_8_hours(),
+    //will store the context info if any errors related to login occur
+    let mut error = LoginErrors {
+        missing_cred: false,
+        missing_cred_message: "".to_string(),
+        invalid_pass: false,
+        invalid_pass_message: "".to_string(),
     };
 
-    //Build the JWT token from it's parts: Header, Payload(claims), and the Encoding keys built from the Secret
-    //Thanks to jsonwebtoken library, we can easily encode if we have these three things
-    //the header we use will just be set to default for now
-    let token = jsonwebtoken::encode(&Header::default(), &claims, &KEYS.encoding) //here is where we use the KEYS we build in user.rs
-        .map_err(|_| AppError::MissingCredentials)?;
+    //basic template with an empty error context
+    let mut template_name = {
+        context.insert("error", &error);
+        "index.html"
+    };
 
-    //we will store the token as a cookie
-    let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
+    //Missing Credentials ERROR situation
+    if creds.email.is_empty() || creds.password.is_empty() {
+        error.missing_cred = true;
+        error.missing_cred_message = "Please enter your username and password to login".to_string();
+        template_name = {
+            context.insert("error", &error);
+            "index.html"
+        };
 
-    //TODO add error context in here
-    //TODO RENDER the Template
-    let mut response = Response::builder()
-        .status(StatusCode::FOUND)
-        .body(Body::empty()) //TODO stick the html that gets rendered, inside the body here!
-        //TODO then we don't need to return html at all, just the response: Response<String>
-        //TODO axum will handle grabbing that html out of the body, hoepfully
-        .unwrap();
+        let rendered = TEMPLATES
+            .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+            .unwrap_or_else(|err| {
+                error!("Template rendering error: {}", err);
+                panic!()
+            });
 
-    response
-        .headers_mut()
-        .insert(LOCATION, HeaderValue::from_static("/"));
-    response.headers_mut().insert(
-        SET_COOKIE,
-        HeaderValue::from_str(&cookie.to_string()).unwrap(),
-    );
+        let mut response = Response::builder()
+            .status(StatusCode::FOUND)
+            .body(rendered) //stick the html that gets rendered, inside the body here!
+            .unwrap();
 
-    Ok(response)
+        Ok(response) //return right away on error
+
+    } else {
+        //We have credentials, but what if one is invalid?
+        let existing_user = database.get_user(&creds.email).await?;
+        //TODO what to do if we can't find the user?
+
+        //use argon2 to reverse hash and verify the given password
+        let is_password_correct =
+            match argon2::verify_encoded(&existing_user.password, creds.password.as_bytes()) {
+                //TODO removed * in &*existing_user.password
+                Ok(result) => result,
+                Err(_) => {
+                    return Err(AppError::InternalServerError);
+                }
+            };
+
+        //INVALID PASSWORD ERROR situation, we need to render the template with that error
+        if !is_password_correct {
+            error.invalid_pass = true;
+            error.invalid_pass_message =
+                "The password you entered was not correct, please try again.".to_string();
+            template_name = {
+                context.insert("error", &error);
+                "index.html"
+            };
+
+
+            let rendered = TEMPLATES
+                .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+                .unwrap_or_else(|err| {
+                    error!("Template rendering error: {}", err);
+                    panic!()
+                });
+
+            let mut response = Response::builder()
+                .status(StatusCode::FOUND)
+                .body(rendered) //stick the html that gets rendered, inside the body here!
+                .unwrap();
+
+            Ok(response) //return right away on error
+
+        } else {
+            //the password is CORRECT, and we can create the JWT token
+
+            //Now we have validated the users creds, lets make claims piece of the token
+            let claims = Claims {
+                id: 0,
+                email: creds.email.to_owned(),
+                exp: get_timestamp_after_8_hours(),
+            };
+
+            //Build the JWT token from it's parts: Header, Payload(claims), and the Encoding keys built from the Secret
+            //Thanks to jsonwebtoken library, we can easily encode if we have these three things
+            //the header we use will just be set to default for now
+            let token = jsonwebtoken::encode(&Header::default(), &claims, &KEYS.encoding) //here is where we use the KEYS we build in user.rs
+                .map_err(|_| AppError::MissingCredentials)?;
+
+            //we will store the token as a cookie
+            let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
+
+            let rendered = TEMPLATES
+                .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+                .unwrap_or_else(|err| {
+                    error!("Template rendering error: {}", err);
+                    panic!()
+                });
+
+            let mut response = Response::builder()
+                .status(StatusCode::FOUND)
+                .body(rendered) //stick the html that gets rendered, inside the body here!
+                .unwrap();
+
+            response
+                .headers_mut()
+                .insert(LOCATION, HeaderValue::from_static("/"));
+            response.headers_mut().insert(
+                SET_COOKIE,
+                HeaderValue::from_str(&cookie.to_string()).unwrap(),
+            );
+
+            Ok(response) //return with NO ERROR
+        }
+    }
 }
 
 ///Silly welcome message to test we did claims right

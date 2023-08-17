@@ -29,6 +29,12 @@
 <!--action is the path it will take when someone hits submit, which endpoint does the form data go to?-->
 <!--But we can't send JSON, so we need to send Form(creds): Form<User> as the arg to our login function-->
 <form action="/login" method="post">
+    {% if error.missing_cred %}
+    <p class="missing-credentials"> {{error.missing_cred_message}} </p>
+    {% endif %}
+    {% if error.invalid_pass %}
+    <p class="invalid-password"> {{error.invalid_pass_message}} </p>
+    {% endif %}
     <div class="input-container">
         <label class="input-label" for ="email_login">Email: </label>
         <input type="text" id="email_login" name="email">

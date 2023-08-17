@@ -33,7 +33,11 @@ impl IntoResponse for PagePackage {
 // err_message,
 // has_error
 // )]
-pub struct ErrorPackage {
-    pub err_message: AppError,
-    pub has_error: bool,
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct LoginErrors {
+    pub missing_cred: bool,
+    pub missing_cred_message: String,
+    pub invalid_pass: bool,
+    pub invalid_pass_message: String,
 }
