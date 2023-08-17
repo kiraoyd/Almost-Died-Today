@@ -35,6 +35,9 @@
     {% if error.invalid_pass %}
     <p class="invalid-password"> {{error.invalid_pass_message}} </p>
     {% endif %}
+    {% if error.no_user %}}
+    <p class="no-user"> {{error.no_user_message}}</p>
+    {% endif %}
     <div class="input-container">
         <label class="input-label" for ="email_login">Email: </label>
         <input type="text" id="email_login" name="email">

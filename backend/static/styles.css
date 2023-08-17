@@ -73,7 +73,8 @@ h2 {
     margin-bottom: 20px; /* Adjust the margin bottom value as needed */
 }
 
-.invalid-password {
+.invalid-password,
+.no-user {
     color: red;
     border: 1px solid red;
     background-color: rgba(0, 0, 0.8);

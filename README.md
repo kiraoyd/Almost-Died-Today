@@ -2,7 +2,7 @@
 
 Author: Kira Klingenberg
 
-#### A Rust website built for Casey Baily and Bart Massey's 2023 Rust Web course at Portland State University.
+### A Rust fullstack website built for Casey Baily and Bart Massey's 2023 Rust Web course at Portland State University.
 
 This site uses an axum server, tokio runtime, and sqlx to access a postgres database.
 
@@ -10,14 +10,14 @@ It queries the NASA API NeoWs to grab recent data on asteroids that have passed 
 Once logged in, the landing page displays a visual representation for the asteroid which came closest to earth on today's date, or barring the existence of one today, the most recent asteroid close encounter.
 You will also be greeted with a congradulatory survival message.  
 
+The frontend is built with HTML Tera Templates, CSS, and terrible free stock images sourced directly from the internet.
 
-Features still to be implemented:
+#### Features still to be implemented:
 
 - Implement user/admin role distinctions
 - Provide logout functionality
 - Place the NASA API query on a timed fetch.
 - Render a completely different page style if no asteroid near miss is found within the last week.
-
 
 
 ## To Run
@@ -44,16 +44,34 @@ From the linux command line, at the root directory of the project:
 
 Navigate to: ```localhost:3000/```
 
-When prompted, sign in using:
+#### Try out these user error situations:
+
+1. Hit the login button with one or more empty login feilds.
+2. Attempt to login with a real username (me@gmail.com will work),
+but a crap password (try "whoops").
+3. Hit the register button with one or more empty feilds.
+4. Attempt to register with a username, and only one password feild filled out.
+
+Error messages should appear on the screen accrodingly.
+
+KNOWN BUG: I have been unable to fix a Rust Compiler error that would let me run a check to see if the username provided was indeed in our database.
+So presently, if you try to login with a bad username, you just get rerouted to a terrible error page. Please don't try this or you will just be sad.
+
+#### Now try registering a new user, you should be rerouted to a success screen.
+
+Once there, navigate back to the login page and try to login with that just-created username and password.
+Or alternatively.....
+#### Login using this pre-seeded user:
 
 >Username: me@gmail.com
 > 
 >Password: banana
 
-You should now see basic HTML reporting which(if any) asteroid almost killed us all.
+You should now be redirected to a page reporting which(if any) asteroid almost killed us all.
 
-To try out the search feature, try searching for a few dates within the week. 
+#### To try out the search feature, try searching for a few dates within the week. 
 If no asteroid is found for a date the site will report that, otherwise the data for the found asteroid will be shown.
+Presently we only will have data in the database going back 7-days prior to todays date (per the NASA API limits).
 
 Note: The picture of the angry asteroid is just a placeholder, so it is the same each time, eventually I want to have images of various sizes that are selected based on diameter info.
 
@@ -63,9 +81,20 @@ Note: The client crate in this project is so far unused, but is present in case 
 
 ## Project Summary
 
+#### There are a few requirements I chose to omit, or just didn't get to in time:
+
+- Since my site is more of an information hub, rather than an interactive place, I didn't come up with a way to has users save and delete some kind of choice.
+  If I wanted to add something like this in the future, I suppose I could add a feature to allow users to save the asteroid data displayed on some particular day, so they could go back and view their saved doomsday info whenever they want. But this is a stretch goal.
+- I just got the search feature running, and if I have time I will update it to have an interactive user query to the NASA API route if the date is not found in our database.
+  (The plan: check our database first, if nothing found, query nasa for a result, if we get one, post it to our database and render it for display)
+- Lastly, I ran out of time before implementing the user roles and allowing admins to "ban" users accounts.
+- Also a bug to fix: we panic if the date entered by the user is not valid
+- I left some clippy warnings about unneeded mapping, because I don't fully understand why I don't need them. I asked about this on zulip, too late probably, and don't have a response yet so am just going to leave those in for now.
+
+
 To see the full journal of my journey building this site, including what went wrong and how I fixed it, please see JOURNAL.md.
 
-Consider this blurb below a TL:DR of JOURNAL.md. 
+#### Consider this blurb below a TL:DR of JOURNAL.md:
 
 Overall, this project went really well. I was able to successfully build the MVP that I wanted, and I had a lot of fun! 
 
@@ -108,20 +137,11 @@ LAST MINUTE ADD ON: I just added in the feature to the login handler, so that if
 To do this I made a LoginErrors struct to hold the flags for each kind of login error, and the message associated. 
 I want to make one for if the user isn't found as well, and will update this struct to have those feilds once I get to it.
 I didn't write about this part in the Journal as it was a last minute addition. And also, I got the registration page to reroute as well!
-
+I'm still trying to run a check for if we don't find the username in our db, but currently there is a weird cargo error I cannot debug.
+(See commented out lines around line 293 of main_handlers, I left them in in case anyone wants to recreate the bug, just uncomment and run cargo check).
+So presently, nothing happens other than an error if we don't have the user requested in the db....
 
 On the CSS: I took Casey's advice and had chatGPT help me out with this. 
 I was pleasantly surprised at how much I did actually remember, and was able to use this to remedy the MANY MANY times chatGPT was just plain wrong.
 It's definitely not perfect, but I made the executive decision to spend more time on the backend than the front, so the ugly CSS issues will have to be fixed another day.
-
-There are a few requirements I chose to omit, or just didn't get to in time:
-
-- Since my site is more of an information hub, rather than an interactive place, I didn't come up with a way to has users save and delete some kind of choice.
-If I wanted to add something like this in the future, I suppose I could add a feature to allow users to save the asteroid data displayed on some particular day, so they could go back and view their saved doomsday info whenever they want. But this is a stretch goal.
-- I just got the search feature running, and if I have time I will update it to have an interactive user query to the NASA API route if the date is not found in our database.
-  (The plan: check our database first, if nothing found, query nasa for a result, if we get one, post it to our database and render it for display)
-- Lastly, I ran out of time before implementing the user roles and allowing admins to "ban" users accounts.
-- I JUUUUUST realised that if you register, you get routed to a blank page to see a JSON message, I need to fix this!
-- Also a bug to fix: we panic if the date entered by the user is not valid
-
 

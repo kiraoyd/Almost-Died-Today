@@ -40,6 +40,8 @@ pub struct LoginErrors {
     pub missing_cred_message: String,
     pub invalid_pass: bool,
     pub invalid_pass_message: String,
+    pub no_user: bool,
+    pub no_user_message: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -49,4 +51,3 @@ pub struct RegistrationErrors {
     pub user_exists: bool,
     pub user_exists_message: String,
 }
-

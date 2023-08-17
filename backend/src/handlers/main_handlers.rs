@@ -150,7 +150,6 @@ pub async fn register(
     State(database): State<Store>, //TODO removed mut from database
     Form(mut credentials): Form<UserSignup>, //credentials come in from the frontend, after a user attempts to login
 ) -> Result<Html<String>, AppError> {
-
     let mut context = Context::new();
 
     let mut error = RegistrationErrors {
@@ -172,7 +171,8 @@ pub async fn register(
     //MISSING CREDENTIALS ERROR situation
     if credentials.email.is_empty() || credentials.password.is_empty() {
         error.missing_cred = true;
-        error.missing_cred_message = "A new username and password is required to register.".to_string();
+        error.missing_cred_message =
+            "A new username and password is required to register.".to_string();
         template_name = {
             context.insert("error", &error);
             "index.html"
@@ -196,7 +196,8 @@ pub async fn register(
     //If we get a good result, then the user already exists
     if existing_user.is_ok() {
         error.user_exists = true;
-        error.user_exists_message = "Sorry, that username has already been taken, please try a different one.".to_string();
+        error.user_exists_message =
+            "Sorry, that username has already been taken, please try a different one.".to_string();
         template_name = {
             context.insert("error", &error);
             "index.html"
@@ -232,7 +233,6 @@ pub async fn register(
         });
 
     Ok(Html(rendered))
-
 }
 
 ///Verifies the credentials given by a user trying to login, if valid,make a JWT token and store it as a browser cookie
@@ -249,13 +249,17 @@ pub async fn login(
         missing_cred_message: "".to_string(),
         invalid_pass: false,
         invalid_pass_message: "".to_string(),
+        no_user: false,
+        no_user_message: "".to_string(),
     };
 
-    //basic template with an empty error context
+    //basic template with an empty error context, will use if no errors found
     let mut template_name = {
         context.insert("error", &error);
         "index.html"
     };
+
+    let mut error_flag = false;
 
     //Missing Credentials ERROR situation
     if creds.email.is_empty() || creds.password.is_empty() {
@@ -265,7 +269,6 @@ pub async fn login(
             context.insert("error", &error);
             "index.html"
         };
-
         let rendered = TEMPLATES
             .render(template_name, &context) //render takes all the context attached in template_name and inserts it
             .unwrap_or_else(|err| {
@@ -278,16 +281,33 @@ pub async fn login(
             .body(rendered) //stick the html that gets rendered, inside the body here!
             .unwrap();
 
-        Ok(response) //return right away on error
-    } else {
-        //We have credentials, but what if one is invalid?
-        let existing_user = database.get_user(&creds.email).await?;
-        //TODO what to do if we can't find the user?
+        return Ok(response); //return immediately with empty feilds
+    }
 
+    //If we have something in both feilds.....
+    //Try to get the user
+    let existing_user = database.get_user(&creds.email).await?;
+
+    /* TODO: Cargo claims is_err() is not found in 'User', but get_user returns a Result<User, AppError>, so I am truly baffled here
+    //INVALID USER ERROR situation
+    if existing_user.is_err() {
+        //ERROR NO USER FOUND
+        error.no_user = true;
+        error.no_user_message = "We can't find that username in our records, please try again.".to_string();
+        template_name = {
+            context.insert("error", &error);
+            "index.html"
+        };
+        error_flag = true;
+    }
+     */
+
+    //Only go forward with the user IF we haven't erred
+    if !error_flag {
+        //VALID USER
         //use argon2 to reverse hash and verify the given password
         let is_password_correct =
             match argon2::verify_encoded(&existing_user.password, creds.password.as_bytes()) {
-                //TODO removed * in &*existing_user.password
                 Ok(result) => result,
                 Err(_) => {
                     return Err(AppError::InternalServerError);
@@ -303,23 +323,11 @@ pub async fn login(
                 context.insert("error", &error);
                 "index.html"
             };
+            error_flag = true;
+        }
 
-            let rendered = TEMPLATES
-                .render(template_name, &context) //render takes all the context attached in template_name and inserts it
-                .unwrap_or_else(|err| {
-                    error!("Template rendering error: {}", err);
-                    panic!()
-                });
-
-            let response = Response::builder()
-                .status(StatusCode::FOUND)
-                .body(rendered) //stick the html that gets rendered, inside the body here!
-                .unwrap();
-
-            Ok(response) //return right away on error
-        } else {
-            //the password is CORRECT, and we can create the JWT token
-
+        if !error_flag {
+            //Otherwise the user AND password is correct, so we want to set the JWT
             //Now we have validated the users creds, lets make claims piece of the token
             let claims = Claims {
                 id: 0,
@@ -355,10 +363,25 @@ pub async fn login(
                 SET_COOKIE,
                 HeaderValue::from_str(&cookie.to_string()).unwrap(),
             );
-
-            Ok(response) //return with NO ERROR
+            return Ok(response); //return with NO ERROR, will only get this with !error_flag all the way through
         }
     }
+
+    //Otherwisee Errored by either having a blank form, or an invalid username
+    //Take what templates we made for the errors, and render them with the response (no token1)
+    let rendered = TEMPLATES
+        .render(template_name, &context) //render takes all the context attached in template_name and inserts it
+        .unwrap_or_else(|err| {
+            error!("Template rendering error: {}", err);
+            panic!()
+        });
+
+    let response = Response::builder()
+        .status(StatusCode::FOUND)
+        .body(rendered) //stick the html that gets rendered, inside the body here!
+        .unwrap();
+
+    Ok(response) //return on any error
 }
 
 ///Silly welcome message to test we did claims right
